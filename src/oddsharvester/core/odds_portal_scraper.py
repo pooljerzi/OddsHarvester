@@ -290,21 +290,23 @@ class OddsPortalScraper(BaseScraper):
         # Check for gaps in pagination (e.g., [1,2,3,4,5,6,7,8,9,10,27] -> missing 11-26)
         pages_to_scrape = self._fill_pagination_gaps(total_pages)
 
-        self.logger.info(f"Maximum pages parameter: {max_pages}")
-
-        # Apply max_pages limit if provided
-        if max_pages:
-            pages_to_scrape = pages_to_scrape[:max_pages]
-            self.logger.info(f"Limited to first {max_pages} pages due to max_pages parameter")
+        # Apply page limit: explicit --max-pages overrides the default safety cap
+        effective_limit = max_pages if max_pages else MAX_PAGINATION_PAGES
+        if len(pages_to_scrape) > effective_limit:
+            self.logger.warning(
+                f"Pagination has {len(pages_to_scrape)} pages, limiting to {effective_limit} "
+                f"({'--max-pages' if max_pages else 'safety cap'})."
+            )
+            pages_to_scrape = pages_to_scrape[:effective_limit]
         else:
-            self.logger.info(f"No page limit applied, will scrape all {len(pages_to_scrape)} pages")
+            self.logger.info(f"Will scrape all {len(pages_to_scrape)} pages (limit: {effective_limit})")
 
         self.logger.info(f"Final pages to scrape: {pages_to_scrape}")
         return pages_to_scrape
 
     def _fill_pagination_gaps(self, raw_pages: list[int]) -> list[int]:
         """
-        Sort, deduplicate, fill gaps, and cap discovered pagination pages.
+        Sort, deduplicate, and fill gaps in discovered pagination pages.
 
         OddsPortal renders pagination with an ellipsis for large page ranges
         (e.g. ``[1,2,3,...,28]``), so the HTML only contains the endpoints.
@@ -314,7 +316,7 @@ class OddsPortalScraper(BaseScraper):
             raw_pages (List[int]): Raw page numbers found in pagination.
 
         Returns:
-            List[int]: Contiguous list of pages from 1..max, capped at MAX_PAGINATION_PAGES.
+            List[int]: Contiguous list of pages from 1..max.
         """
         if len(raw_pages) <= 1:
             return raw_pages
@@ -325,14 +327,6 @@ class OddsPortalScraper(BaseScraper):
             f"Pagination HTML showed {sorted(set(raw_pages))}, "
             f"filling to contiguous range 1..{max_page} ({len(all_pages)} pages)"
         )
-
-        # Apply safety cap
-        if len(all_pages) > MAX_PAGINATION_PAGES:
-            self.logger.warning(
-                f"Pagination exceeds safety cap ({len(all_pages)} > {MAX_PAGINATION_PAGES}). "
-                f"Limiting to first {MAX_PAGINATION_PAGES} pages."
-            )
-            all_pages = all_pages[:MAX_PAGINATION_PAGES]
 
         return all_pages
 

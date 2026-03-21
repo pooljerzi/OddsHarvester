@@ -336,6 +336,32 @@ async def test_get_pagination_info(setup_scraper_mocks):
 
 
 @pytest.mark.asyncio
+async def test_get_pagination_info_max_pages_overrides_safety_cap(setup_scraper_mocks):
+    """When --max-pages exceeds MAX_PAGINATION_PAGES, the user value is respected."""
+    mocks = setup_scraper_mocks
+    scraper = mocks["scraper"]
+    page_mock = mocks["page_mock"]
+
+    total = MAX_PAGINATION_PAGES + 20
+    links = []
+    for i in range(1, total + 1):
+        link = AsyncMock()
+        link.inner_text = AsyncMock(return_value=str(i))
+        links.append(link)
+
+    page_mock.query_selector_all.return_value = links
+
+    # Without max_pages: safety cap applies
+    result = await scraper._get_pagination_info(page=page_mock, max_pages=None)
+    assert len(result) == MAX_PAGINATION_PAGES
+
+    # With max_pages > safety cap: user value wins
+    result = await scraper._get_pagination_info(page=page_mock, max_pages=total)
+    assert len(result) == total
+    assert result == list(range(1, total + 1))
+
+
+@pytest.mark.asyncio
 async def test_collect_match_links(setup_scraper_mocks):
     """Test collecting match links from multiple pages."""
     mocks = setup_scraper_mocks
@@ -436,12 +462,11 @@ class TestFillPaginationGaps:
         """Duplicate pages are deduplicated via max()."""
         assert scraper._fill_pagination_gaps([1, 2, 2, 3, 3]) == [1, 2, 3]
 
-    def test_safety_cap(self, scraper):
-        """Pages exceeding MAX_PAGINATION_PAGES are capped."""
+    def test_large_page_list(self, scraper):
+        """Large page lists are returned in full (cap is applied in _get_pagination_info)."""
         pages = list(range(1, MAX_PAGINATION_PAGES + 20))
         result = scraper._fill_pagination_gaps(pages)
-        assert len(result) == MAX_PAGINATION_PAGES
-        assert result == list(range(1, MAX_PAGINATION_PAGES + 1))
+        assert result == pages
 
     def test_under_safety_cap(self, scraper):
         """Pages under the safety cap are returned in full."""
