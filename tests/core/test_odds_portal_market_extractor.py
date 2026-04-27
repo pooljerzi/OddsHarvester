@@ -7,7 +7,6 @@ from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.sport_market_registry import SportMarketRegistry
 from oddsharvester.core.sport_period_registry import SportPeriodRegistry
-from oddsharvester.utils.constants import DEFAULT_MARKET_TIMEOUT_MS
 
 # Sample HTML for testing
 SAMPLE_HTML_ODDS = """
@@ -62,7 +61,7 @@ class TestOddsPortalMarketExtractor:
     @pytest.fixture
     def extractor(self, browser_helper_mock):
         """Create an instance of OddsPortalMarketExtractor with a mocked BrowserHelper."""
-        return OddsPortalMarketExtractor(browser_helper_mock, scroller=AsyncMock())
+        return OddsPortalMarketExtractor(browser_helper_mock, scroller=AsyncMock(), tab_navigator=AsyncMock())
 
     @pytest.fixture
     def page_mock(self):
@@ -209,14 +208,13 @@ class TestOddsPortalMarketExtractor:
     async def test_extract_market_odds(self, extractor, page_mock, browser_helper_mock):
         """Test complete extraction of odds for a given market."""
         # Arrange
-        browser_helper_mock.navigate_to_market_tab = AsyncMock(return_value=True)
+        extractor.navigation_manager.navigate_to_market_tab = AsyncMock(return_value=True)
+        extractor.navigation_manager.wait_for_market_switch = AsyncMock(return_value=True)
+        extractor.navigation_manager.wait_for_page_load = AsyncMock()
         extractor.odds_parser.parse_market_odds = MagicMock(
             return_value=[{"bookmaker_name": "Bookmaker1", "1": "1.90", "X": "3.50", "2": "4.20", "period": "FullTime"}]
         )
 
-        mock_active_tab = AsyncMock()
-        mock_active_tab.text_content = AsyncMock(return_value="1X2")
-        page_mock.query_selector = AsyncMock(return_value=mock_active_tab)
         page_mock.content = AsyncMock(return_value="<div>test</div>")
 
         main_market = "1X2"
@@ -226,8 +224,8 @@ class TestOddsPortalMarketExtractor:
         result = await extractor.extract_market_odds(page=page_mock, main_market=main_market, odds_labels=odds_labels)
 
         # Assert
-        browser_helper_mock.navigate_to_market_tab.assert_called_once_with(
-            page=page_mock, market_tab_name=main_market, timeout=DEFAULT_MARKET_TIMEOUT_MS
+        extractor.navigation_manager.navigate_to_market_tab.assert_called_once_with(
+            page=page_mock, market_tab_name=main_market
         )
         extractor.odds_parser.parse_market_odds.assert_called_once()
         assert len(result) == 1
@@ -237,17 +235,17 @@ class TestOddsPortalMarketExtractor:
     async def test_extract_market_odds_with_specific_market(self, extractor, page_mock, browser_helper_mock):
         """Test extracting odds with a specific sub-market."""
         # Arrange
-        browser_helper_mock.navigate_to_market_tab = AsyncMock(return_value=True)
+        extractor.navigation_manager.navigate_to_market_tab = AsyncMock(return_value=True)
+        extractor.navigation_manager.wait_for_market_switch = AsyncMock(return_value=True)
+        extractor.navigation_manager.wait_for_page_load = AsyncMock()
         extractor.navigation_manager.scroller.scroll_until_visible_and_click_parent = AsyncMock(return_value=True)
+        extractor.navigation_manager.close_specific_market = AsyncMock(return_value=True)
         extractor.odds_parser.parse_market_odds = MagicMock(
             return_value=[
                 {"bookmaker_name": "Bookmaker1", "odds_over": "1.90", "odds_under": "1.90", "period": "FullTime"}
             ]
         )
 
-        mock_active_tab = AsyncMock()
-        mock_active_tab.text_content = AsyncMock(return_value="Over/Under")
-        page_mock.query_selector = AsyncMock(return_value=mock_active_tab)
         page_mock.content = AsyncMock(return_value="<div>test</div>")
 
         main_market = "Over/Under"
@@ -260,7 +258,7 @@ class TestOddsPortalMarketExtractor:
         )
 
         # Assert
-        browser_helper_mock.navigate_to_market_tab.assert_called_once()
+        extractor.navigation_manager.navigate_to_market_tab.assert_called_once()
         extractor.navigation_manager.scroller.scroll_until_visible_and_click_parent.assert_called()
         assert len(result) == 1
         assert result[0]["bookmaker_name"] == "Bookmaker1"
@@ -269,9 +267,7 @@ class TestOddsPortalMarketExtractor:
     async def test_extract_market_odds_tab_not_found(self, extractor, page_mock, browser_helper_mock):
         """Test behavior when the market tab is not found."""
         # Arrange
-        browser_helper_mock.navigate_to_market_tab = AsyncMock(return_value=False)
-
-        page_mock.query_selector = AsyncMock(return_value=None)
+        extractor.navigation_manager.navigate_to_market_tab = AsyncMock(return_value=False)
 
         # Act
         result = await extractor.extract_market_odds(
@@ -342,7 +338,7 @@ class TestOddsPortalMarketExtractor:
     async def test_extract_market_odds_exception(self, extractor, page_mock, browser_helper_mock):
         """Test handling of exceptions during market extraction."""
         # Arrange
-        browser_helper_mock.navigate_to_market_tab = AsyncMock(side_effect=Exception("Test exception"))
+        extractor.navigation_manager.navigate_to_market_tab = AsyncMock(side_effect=Exception("Test exception"))
 
         # Act
         result = await extractor.extract_market_odds(page=page_mock, main_market="1X2", odds_labels=["1", "X", "2"])

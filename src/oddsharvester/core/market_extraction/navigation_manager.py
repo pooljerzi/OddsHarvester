@@ -2,27 +2,23 @@ import logging
 
 from playwright.async_api import Page
 
+from oddsharvester.core.browser.market_navigation import MarketTabNavigator
 from oddsharvester.core.browser.scrolling import PageScroller
-from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.utils.constants import DEFAULT_MARKET_TIMEOUT_MS, MARKET_SWITCH_WAIT_TIME_MS, SCROLL_PAUSE_TIME_MS
 
 
 class NavigationManager:
     """Handles browser navigation for market extraction."""
 
-    def __init__(self, browser_helper: BrowserHelper, scroller: PageScroller):
-        """Initialize NavigationManager.
-
-        Note: `browser_helper` is kept for now (still used for navigate_to_market_tab).
-        It will be removed in Task 4.
-        """
+    def __init__(self, tab_navigator: MarketTabNavigator, scroller: PageScroller):
+        """Initialize NavigationManager."""
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.browser_helper = browser_helper
+        self.tab_navigator = tab_navigator
         self.scroller = scroller
 
     async def navigate_to_market_tab(self, page: Page, market_tab_name: str) -> bool:
         """Navigate to a specific market tab."""
-        return await self.browser_helper.navigate_to_market_tab(
+        return await self.tab_navigator.navigate_to_tab(
             page=page, market_tab_name=market_tab_name, timeout=DEFAULT_MARKET_TIMEOUT_MS
         )
 

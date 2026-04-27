@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from oddsharvester.core.browser.market_navigation import MarketTabNavigator
 from oddsharvester.core.browser.scrolling import PageScroller
-from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.market_extraction.navigation_manager import NavigationManager
 from oddsharvester.utils.constants import DEFAULT_MARKET_TIMEOUT_MS, MARKET_SWITCH_WAIT_TIME_MS, SCROLL_PAUSE_TIME_MS
 
@@ -12,9 +12,9 @@ class TestNavigationManager:
     """Unit tests for the NavigationManager class."""
 
     @pytest.fixture
-    def browser_helper_mock(self):
-        """Create a mock for BrowserHelper."""
-        return MagicMock(spec=BrowserHelper)
+    def tab_navigator_mock(self):
+        """Create a mock for MarketTabNavigator."""
+        return MagicMock(spec=MarketTabNavigator)
 
     @pytest.fixture
     def scroller_mock(self):
@@ -22,9 +22,9 @@ class TestNavigationManager:
         return MagicMock(spec=PageScroller)
 
     @pytest.fixture
-    def navigation_manager(self, browser_helper_mock, scroller_mock):
+    def navigation_manager(self, tab_navigator_mock, scroller_mock):
         """Create an instance of NavigationManager with mocked dependencies."""
-        return NavigationManager(browser_helper_mock, scroller_mock)
+        return NavigationManager(tab_navigator_mock, scroller_mock)
 
     @pytest.fixture
     def page_mock(self):
@@ -34,10 +34,10 @@ class TestNavigationManager:
         return mock
 
     @pytest.mark.asyncio
-    async def test_navigate_to_market_tab_success(self, navigation_manager, page_mock, browser_helper_mock):
+    async def test_navigate_to_market_tab_success(self, navigation_manager, page_mock, tab_navigator_mock):
         """Test successful navigation to a market tab."""
         # Arrange
-        browser_helper_mock.navigate_to_market_tab = AsyncMock(return_value=True)
+        tab_navigator_mock.navigate_to_tab = AsyncMock(return_value=True)
         market_tab_name = "1X2"
 
         # Act
@@ -45,15 +45,15 @@ class TestNavigationManager:
 
         # Assert
         assert result is True
-        browser_helper_mock.navigate_to_market_tab.assert_called_once_with(
+        tab_navigator_mock.navigate_to_tab.assert_called_once_with(
             page=page_mock, market_tab_name=market_tab_name, timeout=DEFAULT_MARKET_TIMEOUT_MS
         )
 
     @pytest.mark.asyncio
-    async def test_navigate_to_market_tab_failure(self, navigation_manager, page_mock, browser_helper_mock):
+    async def test_navigate_to_market_tab_failure(self, navigation_manager, page_mock, tab_navigator_mock):
         """Test failed navigation to a market tab."""
         # Arrange
-        browser_helper_mock.navigate_to_market_tab = AsyncMock(return_value=False)
+        tab_navigator_mock.navigate_to_tab = AsyncMock(return_value=False)
         market_tab_name = "NonExistentMarket"
 
         # Act
