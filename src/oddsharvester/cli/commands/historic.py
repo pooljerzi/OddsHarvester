@@ -14,9 +14,6 @@ from oddsharvester.utils.sport_market_constants import Sport
 
 logger = logging.getLogger(__name__)
 
-# Sports that support 'current' season
-CURRENT_SEASON_SPORTS = {"tennis", "football", "baseball", "ice-hockey", "rugby-league", "rugby-union"}
-
 
 @click.command("historic")
 @common_options
@@ -40,11 +37,7 @@ def historic(ctx, **kwargs):
     storage_format = kwargs["storage_format"]
     bookies_filter = kwargs.get("bookies_filter")
     season = kwargs.get("season")
-
-    # Normalize 'current' to None for allowed sports
     sport_value = sport.value if isinstance(sport, Sport) else sport
-    if season and season.lower() == "current" and sport_value.lower() in CURRENT_SEASON_SPORTS:
-        season = None
 
     try:
         scraped_data = asyncio.run(

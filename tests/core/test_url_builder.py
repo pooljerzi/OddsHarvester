@@ -69,6 +69,35 @@ def test_get_historic_matches_url(sport, league, season, expected_url):
 
 
 @pytest.mark.parametrize(
+    ("sport", "league", "expected_url"),
+    [
+        ("football", "england-premier-league", f"{ODDSPORTAL_BASE_URL}/football/england/premier-league/results/"),
+        ("tennis", "atp-tour", f"{ODDSPORTAL_BASE_URL}/tennis/atp-tour/results/"),
+        ("basketball", "nba", "https://www.oddsportal.com/basketball/usa/nba/results/"),
+        ("baseball", "mlb", f"{ODDSPORTAL_BASE_URL}/baseball/usa/mlb/results/"),
+        ("american-football", "nfl", f"{ODDSPORTAL_BASE_URL}/american-football/usa/nfl/results/"),
+        ("ice-hockey", "nhl", "https://www.oddsportal.com/hockey/usa/nhl/results/"),
+        (
+            "rugby-league",
+            "england-super-league",
+            "https://www.oddsportal.com/rugby-league/england/super-league/results/",
+        ),
+        ("rugby-union", "six-nations", "https://www.oddsportal.com/rugby-union/europe/six-nations/results/"),
+    ],
+)
+def test_get_historic_matches_url_with_current_season(sport, league, expected_url):
+    """'current' must resolve to the base /results/ URL for every supported sport (issue #59)."""
+    assert URLBuilder.get_historic_matches_url(sport, league, "current") == expected_url
+
+
+@pytest.mark.parametrize("season_value", ["current", "CURRENT", "Current", "cUrReNt"])
+def test_get_historic_matches_url_current_is_case_insensitive(season_value):
+    """'current' must be matched case-insensitively (issue #59)."""
+    expected = f"{ODDSPORTAL_BASE_URL}/football/england/premier-league/results/"
+    assert URLBuilder.get_historic_matches_url("football", "england-premier-league", season_value) == expected
+
+
+@pytest.mark.parametrize(
     ("sport", "league", "season", "error_msg"),
     [
         # Invalid season format

@@ -23,7 +23,7 @@ class URLBuilder:
             season (Optional[str]): The season for which the URL is required. Accepts either:
                 - a single year (e.g., "2024")
                 - a range in 'YYYY-YYYY' format (e.g., "2023-2024")
-                - None or empty string for the current season
+                - the literal string "current" (case-insensitive), None, or empty string for the current season
 
         Returns:
             str: The constructed URL for the league and season.
@@ -31,6 +31,9 @@ class URLBuilder:
         Raises:
             ValueError: If the season is provided but does not follow the expected format(s).
         """
+        if isinstance(season, str) and season.lower() == "current":
+            season = None
+
         base_url = URLBuilder.get_league_url(sport, league).rstrip("/")
 
         # Resolve league alias for this season (handles sponsor name changes)
@@ -41,9 +44,6 @@ class URLBuilder:
         # Treat missing season as current
         if not season:
             return f"{base_url}/results/"
-
-        if isinstance(season, str) and season.lower() == "current":
-            raise ValueError(f"Invalid season format: {season}. Expected format: 'YYYY' or 'YYYY-YYYY'")
 
         if re.match(r"^\d{4}$", season):
             return f"{base_url}-{season}/results/"
