@@ -2,13 +2,11 @@ from enum import Enum
 import logging
 
 from playwright.async_api import Page
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from oddsharvester.core.odds_portal_selectors import OddsPortalSelectors
 from oddsharvester.utils.bookies_filter_enum import BookiesFilter
 from oddsharvester.utils.constants import (
     BOOKIES_FILTER_TIMEOUT_MS,
-    COOKIE_BANNER_TIMEOUT_MS,
     DEFAULT_MARKET_TIMEOUT_MS,
     DROPDOWN_WAIT_MS,
     FALLBACK_VERIFY_WAIT_MS,
@@ -34,42 +32,6 @@ class BrowserHelper:
         Initialize the BrowserHelper class.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
-
-    # =============================================================================
-    # COOKIE BANNER MANAGEMENT
-    # =============================================================================
-
-    async def dismiss_cookie_banner(
-        self, page: Page, selector: str | None = None, timeout: int = COOKIE_BANNER_TIMEOUT_MS
-    ):
-        """
-        Dismiss the cookie banner if it appears on the page.
-
-        Args:
-            page (Page): The Playwright page instance to interact with.
-            selector (str): The CSS selector for the cookie banner's accept button.
-            timeout (int): Maximum time to wait for the banner (default: 10000ms).
-
-        Returns:
-            bool: True if the banner was dismissed, False otherwise.
-        """
-        if selector is None:
-            selector = OddsPortalSelectors.COOKIE_BANNER
-
-        try:
-            self.logger.info("Checking for cookie banner...")
-            await page.wait_for_selector(selector, timeout=timeout)
-            self.logger.info("Cookie banner found. Dismissing it.")
-            await page.click(selector)
-            return True
-
-        except PlaywrightTimeoutError:
-            self.logger.info("No cookie banner detected.")
-            return False
-
-        except Exception as e:
-            self.logger.error(f"Error while dismissing cookie banner: {e}")
-            return False
 
     # =============================================================================
     # BOOKMAKER FILTER MANAGEMENT

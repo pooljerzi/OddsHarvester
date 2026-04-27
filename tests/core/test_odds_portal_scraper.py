@@ -32,8 +32,7 @@ def setup_scraper_mocks():
     playwright_manager_mock.context = context_mock
     playwright_manager_mock.browser = browser_mock
 
-    # Configure the browser helper mock
-    browser_helper_mock.dismiss_cookie_banner = AsyncMock()
+    cookie_dismisser_mock = AsyncMock()
 
     # Create scraper instance with mocks
     scraper = OddsPortalScraper(
@@ -41,6 +40,7 @@ def setup_scraper_mocks():
         browser_helper=browser_helper_mock,
         market_extractor=market_extractor_mock,
         scroller=AsyncMock(),
+        cookie_dismisser=cookie_dismisser_mock,
     )
 
     return {
@@ -48,6 +48,7 @@ def setup_scraper_mocks():
         "playwright_manager_mock": playwright_manager_mock,
         "browser_helper_mock": browser_helper_mock,
         "market_extractor_mock": market_extractor_mock,
+        "cookie_dismisser_mock": cookie_dismisser_mock,
         "page_mock": page_mock,
         "context_mock": context_mock,
         "browser_mock": browser_mock,
@@ -303,7 +304,7 @@ async def test_prepare_page_for_scraping(setup_scraper_mocks):
 
     # Verify the interactions
     scraper.set_odds_format.assert_called_once_with(page=page_mock)
-    mocks["browser_helper_mock"].dismiss_cookie_banner.assert_called_once_with(page=page_mock)
+    mocks["cookie_dismisser_mock"].dismiss.assert_called_once_with(page=page_mock)
 
 
 @pytest.mark.asyncio

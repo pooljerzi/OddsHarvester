@@ -44,6 +44,7 @@ def setup_base_scraper_mocks():
         browser_helper=browser_helper_mock,
         market_extractor=market_extractor_mock,
         scroller=AsyncMock(),
+        cookie_dismisser=AsyncMock(),
     )
 
     return {

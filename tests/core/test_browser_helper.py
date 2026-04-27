@@ -21,58 +21,6 @@ class TestBrowserHelper:
         return page
 
     # =============================================================================
-    # COOKIE BANNER MANAGEMENT TESTS
-    # =============================================================================
-
-    @pytest.mark.asyncio
-    async def test_dismiss_cookie_banner_success(self, browser_helper, mock_page):
-        """Test successful cookie banner dismissal."""
-        # Mock successful banner dismissal
-        mock_page.wait_for_selector = AsyncMock()
-        mock_page.click = AsyncMock()
-
-        result = await browser_helper.dismiss_cookie_banner(mock_page)
-        assert result is True
-        mock_page.wait_for_selector.assert_called_once()
-        mock_page.click.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_dismiss_cookie_banner_custom_selector(self, browser_helper, mock_page):
-        """Test cookie banner dismissal with custom selector."""
-        custom_selector = "#custom-cookie-banner"
-        mock_page.wait_for_selector = AsyncMock()
-        mock_page.click = AsyncMock()
-
-        result = await browser_helper.dismiss_cookie_banner(mock_page, selector=custom_selector)
-        assert result is True
-        mock_page.wait_for_selector.assert_called_with(custom_selector, timeout=10000)
-
-    @pytest.mark.asyncio
-    async def test_dismiss_cookie_banner_timeout_error(self, browser_helper, mock_page):
-        """Test cookie banner dismissal when banner is not found (timeout)."""
-        mock_page.wait_for_selector.side_effect = TimeoutError("Timeout")
-
-        result = await browser_helper.dismiss_cookie_banner(mock_page)
-        assert result is False
-
-    @pytest.mark.asyncio
-    async def test_dismiss_cookie_banner_click_error(self, browser_helper, mock_page):
-        """Test cookie banner dismissal when click fails."""
-        mock_page.wait_for_selector = AsyncMock()
-        mock_page.click.side_effect = Exception("Click failed")
-
-        result = await browser_helper.dismiss_cookie_banner(mock_page)
-        assert result is False
-
-    @pytest.mark.asyncio
-    async def test_dismiss_cookie_banner_wait_error(self, browser_helper, mock_page):
-        """Test cookie banner dismissal when wait_for_selector fails."""
-        mock_page.wait_for_selector.side_effect = Exception("Wait failed")
-
-        result = await browser_helper.dismiss_cookie_banner(mock_page)
-        assert result is False
-
-    # =============================================================================
     # MARKET NAVIGATION TESTS
     # =============================================================================
 
@@ -465,18 +413,6 @@ class TestBrowserHelper:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_logging_during_cookie_banner_dismissal(self, browser_helper, mock_page, caplog):
-        """Test logging during cookie banner dismissal."""
-        with caplog.at_level(logging.INFO):
-            mock_page.wait_for_selector = AsyncMock()
-            mock_page.click = AsyncMock()
-
-            await browser_helper.dismiss_cookie_banner(mock_page)
-
-            assert "Checking for cookie banner" in caplog.text
-            assert "Cookie banner found. Dismissing it." in caplog.text
-
-    @pytest.mark.asyncio
     async def test_logging_during_market_navigation(self, browser_helper, mock_page, caplog):
         """Test logging during market navigation."""
         with caplog.at_level(logging.INFO):
@@ -503,15 +439,3 @@ class TestBrowserHelper:
         ):
             result = await browser_helper.navigate_to_market_tab(mock_page, "Draw No Bet", timeout=5000)
             assert result is True
-
-    @pytest.mark.asyncio
-    async def test_full_cookie_banner_flow(self, browser_helper, mock_page):
-        """Test the complete cookie banner dismissal flow."""
-        # Mock successful cookie banner dismissal
-        mock_page.wait_for_selector = AsyncMock()
-        mock_page.click = AsyncMock()
-
-        result = await browser_helper.dismiss_cookie_banner(mock_page, timeout=5000)
-        assert result is True
-        mock_page.wait_for_selector.assert_called_once()
-        mock_page.click.assert_called_once()
