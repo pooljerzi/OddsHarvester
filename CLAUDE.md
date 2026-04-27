@@ -57,7 +57,7 @@ CLI Layer (src/oddsharvester/cli/) → Core Layer (src/oddsharvester/core/) → 
 - `scraper_app.py` — Top-level orchestrator; initializes browser, scraper, and storage
 - `odds_portal_scraper.py` — Navigates pages, extracts match links, coordinates per-match scraping
 - `playwright_manager.py` — Browser lifecycle (launch, context, page creation)
-- `browser_helper.py` — Page interactions (cookies, scrolling, waiting)
+- `browser/` — Sub-package of focused browser-interaction helpers: `cookies.py` (`CookieDismisser`), `scrolling.py` (`PageScroller`), `market_navigation.py` (`MarketTabNavigator`), `selection.py` (`SelectionManager` + strategy pattern for filter/period selection)
 - `odds_portal_market_extractor.py` — Extracts odds for specified markets from a match page
 - `url_builder.py` — Constructs oddsportal.com URLs for historic/upcoming matches
 - `sport_market_registry.py` — Registers market name→tab mappings per sport
