@@ -13,7 +13,10 @@ from playwright.async_api import Page, TimeoutError
 
 from oddsharvester.core.browser.cookies import CookieDismisser
 from oddsharvester.core.browser.scrolling import PageScroller
-from oddsharvester.core.browser_helper import BrowserHelper
+from oddsharvester.core.browser.selection import (
+    BOOKIES_FILTER_STRATEGY,
+    SelectionManager,
+)
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.odds_portal_selectors import OddsPortalSelectors
 from oddsharvester.core.playwright_manager import PlaywrightManager
@@ -136,28 +139,28 @@ class BaseScraper:
     def __init__(
         self,
         playwright_manager: PlaywrightManager,
-        browser_helper: BrowserHelper,
         market_extractor: OddsPortalMarketExtractor,
         scroller: PageScroller,
         cookie_dismisser: CookieDismisser,
+        selection_manager: SelectionManager,
         preview_submarkets_only: bool = False,
     ):
         """
         Args:
             playwright_manager (PlaywrightManager): Handles Playwright lifecycle.
-            browser_helper (BrowserHelper): Helper class for browser interactions.
             market_extractor (OddsPortalMarketExtractor): Handles market scraping.
             scroller (PageScroller): Handles incremental page scrolling.
             cookie_dismisser (CookieDismisser): Handles cookie banner dismissal.
+            selection_manager (SelectionManager): Manages bookies filter and period selection.
             preview_submarkets_only (bool): If True, only scrape average odds from visible submarkets without loading
             individual bookmaker details.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.playwright_manager = playwright_manager
-        self.browser_helper = browser_helper
         self.market_extractor = market_extractor
         self.scroller = scroller
         self.cookie_dismisser = cookie_dismisser
+        self.selection_manager = selection_manager
         self.preview_submarkets_only = preview_submarkets_only
 
     async def set_odds_format(self, page: Page, odds_format: OddsFormat = OddsFormat.DECIMAL_ODDS):
@@ -472,7 +475,12 @@ class BaseScraper:
             await page.wait_for_timeout(DYNAMIC_CONTENT_WAIT_MS)
 
             # Apply bookmaker filter before extracting odds
-            await self.browser_helper.ensure_bookies_filter_selected(page=page, desired_filter=bookies_filter)
+            await self.selection_manager.ensure_selected(
+                page=page,
+                target_value=bookies_filter.value,
+                display_label=BookiesFilter.get_display_label(bookies_filter),
+                strategy=BOOKIES_FILTER_STRATEGY,
+            )
 
             match_details = await self._extract_match_details_event_header(page, match_link)
 

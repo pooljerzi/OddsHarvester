@@ -127,7 +127,7 @@ async def run(args: argparse.Namespace) -> int:
 
     # Summary
     total = ok_count + ko_count
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"Results: {ok_count}/{total} OK, {ko_count} KO")
 
     return 0 if ko_count == 0 else 1

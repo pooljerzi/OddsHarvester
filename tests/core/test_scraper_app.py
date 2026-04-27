@@ -3,7 +3,6 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
 
-from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.odds_portal_scraper import OddsPortalScraper
 from oddsharvester.core.playwright_manager import PlaywrightManager
@@ -18,7 +17,6 @@ from oddsharvester.utils.constants import OPERATION_RETRY_MAX_ATTEMPTS
 def setup_mocks():
     """Set up common mocks for tests."""
     playwright_manager_mock = MagicMock(spec=PlaywrightManager)
-    browser_helper_mock = MagicMock(spec=BrowserHelper)
     market_extractor_mock = MagicMock(spec=OddsPortalMarketExtractor)
     scraper_mock = MagicMock(spec=OddsPortalScraper)
 
@@ -31,7 +29,6 @@ def setup_mocks():
 
     return {
         "playwright_manager_mock": playwright_manager_mock,
-        "browser_helper_mock": browser_helper_mock,
         "market_extractor_mock": market_extractor_mock,
         "scraper_mock": scraper_mock,
     }
@@ -40,7 +37,6 @@ def setup_mocks():
 @pytest.mark.asyncio
 @patch("oddsharvester.core.scraper_app.OddsPortalScraper")
 @patch("oddsharvester.core.scraper_app.OddsPortalMarketExtractor")
-@patch("oddsharvester.core.scraper_app.BrowserHelper")
 @patch("oddsharvester.core.scraper_app.PlaywrightManager")
 @patch("oddsharvester.core.scraper_app.ProxyManager")
 @patch("oddsharvester.core.scraper_app.SportMarketRegistrar")
@@ -48,7 +44,6 @@ async def test_run_scraper_historic(
     sport_market_registrar_mock,
     proxy_manager_mock,
     playwright_manager_mock,
-    browser_helper_mock,
     market_extractor_mock,
     scraper_cls_mock,
     setup_mocks,
@@ -101,7 +96,6 @@ async def test_run_scraper_historic(
 @pytest.mark.asyncio
 @patch("oddsharvester.core.scraper_app.OddsPortalScraper")
 @patch("oddsharvester.core.scraper_app.OddsPortalMarketExtractor")
-@patch("oddsharvester.core.scraper_app.BrowserHelper")
 @patch("oddsharvester.core.scraper_app.PlaywrightManager")
 @patch("oddsharvester.core.scraper_app.ProxyManager")
 @patch("oddsharvester.core.scraper_app.SportMarketRegistrar")
@@ -109,7 +103,6 @@ async def test_run_scraper_upcoming(
     sport_market_registrar_mock,
     proxy_manager_mock,
     playwright_manager_mock,
-    browser_helper_mock,
     market_extractor_mock,
     scraper_cls_mock,
     setup_mocks,
@@ -160,7 +153,6 @@ async def test_run_scraper_upcoming(
 @pytest.mark.asyncio
 @patch("oddsharvester.core.scraper_app.OddsPortalScraper")
 @patch("oddsharvester.core.scraper_app.OddsPortalMarketExtractor")
-@patch("oddsharvester.core.scraper_app.BrowserHelper")
 @patch("oddsharvester.core.scraper_app.PlaywrightManager")
 @patch("oddsharvester.core.scraper_app.ProxyManager")
 @patch("oddsharvester.core.scraper_app.SportMarketRegistrar")
@@ -168,7 +160,6 @@ async def test_run_scraper_match_links(
     sport_market_registrar_mock,
     proxy_manager_mock,
     playwright_manager_mock,
-    browser_helper_mock,
     market_extractor_mock,
     scraper_cls_mock,
     setup_mocks,
@@ -407,7 +398,6 @@ async def test_run_scraper_multiple_leagues_historic():
     with (
         patch("oddsharvester.core.scraper_app.OddsPortalScraper") as scraper_cls_mock,
         patch("oddsharvester.core.scraper_app.OddsPortalMarketExtractor"),
-        patch("oddsharvester.core.scraper_app.BrowserHelper"),
         patch("oddsharvester.core.scraper_app.PlaywrightManager"),
         patch("oddsharvester.core.scraper_app.ProxyManager"),
         patch("oddsharvester.core.scraper_app.SportMarketRegistrar"),

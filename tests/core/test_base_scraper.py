@@ -7,7 +7,6 @@ from playwright.async_api import Page, TimeoutError
 import pytest
 
 from oddsharvester.core.base_scraper import BaseScraper, _parse_date_header
-from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.playwright_manager import PlaywrightManager
 from oddsharvester.utils.constants import NAVIGATION_TIMEOUT_MS, ODDSPORTAL_BASE_URL
@@ -19,7 +18,6 @@ def setup_base_scraper_mocks():
     """Setup common mocks for BaseScraper tests."""
     # Create mocks for dependencies
     playwright_manager_mock = MagicMock(spec=PlaywrightManager)
-    browser_helper_mock = MagicMock(spec=BrowserHelper)
     market_extractor_mock = MagicMock(spec=OddsPortalMarketExtractor)
 
     # Setup page mock
@@ -38,20 +36,22 @@ def setup_base_scraper_mocks():
     # Configure playwright manager mock
     playwright_manager_mock.context = context_mock
 
+    selection_manager_mock = AsyncMock()
+
     # Create scraper instance with mocks
     scraper = BaseScraper(
         playwright_manager=playwright_manager_mock,
-        browser_helper=browser_helper_mock,
         market_extractor=market_extractor_mock,
         scroller=AsyncMock(),
         cookie_dismisser=AsyncMock(),
+        selection_manager=selection_manager_mock,
     )
 
     return {
         "scraper": scraper,
         "playwright_manager_mock": playwright_manager_mock,
-        "browser_helper_mock": browser_helper_mock,
         "market_extractor_mock": market_extractor_mock,
+        "selection_manager_mock": selection_manager_mock,
         "page_mock": page_mock,
         "context_mock": context_mock,
     }
@@ -490,6 +490,17 @@ async def test_scrape_match_data(setup_base_scraper_mocks):
         scrape_odds_history=True,
         target_bookmaker="bet365",
         preview_submarkets_only=False,
+    )
+
+    # Verify the bookies filter was applied via SelectionManager with the right strategy
+    from oddsharvester.core.browser.selection import BOOKIES_FILTER_STRATEGY
+    from oddsharvester.utils.bookies_filter_enum import BookiesFilter
+
+    mocks["selection_manager_mock"].ensure_selected.assert_called_once_with(
+        page=page_mock,
+        target_value=BookiesFilter.ALL.value,
+        display_label=BookiesFilter.get_display_label(BookiesFilter.ALL),
+        strategy=BOOKIES_FILTER_STRATEGY,
     )
 
     # Verify results

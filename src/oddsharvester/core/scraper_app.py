@@ -3,7 +3,7 @@ import logging
 from oddsharvester.core.browser.cookies import CookieDismisser
 from oddsharvester.core.browser.market_navigation import MarketTabNavigator
 from oddsharvester.core.browser.scrolling import PageScroller
-from oddsharvester.core.browser_helper import BrowserHelper
+from oddsharvester.core.browser.selection import SelectionManager
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.odds_portal_scraper import OddsPortalScraper
 from oddsharvester.core.playwright_manager import PlaywrightManager
@@ -71,22 +71,23 @@ async def run_scraper(
     proxy_manager = ProxyManager(proxy_url=proxy_url, proxy_user=proxy_user, proxy_pass=proxy_pass)
     SportMarketRegistrar.register_all_markets()
     playwright_manager = PlaywrightManager()
-    browser_helper = BrowserHelper()
-    scroller = PageScroller()
     cookie_dismisser = CookieDismisser()
+    selection_manager = SelectionManager()
     tab_navigator = MarketTabNavigator()
+    scroller = PageScroller()
+
     market_extractor = OddsPortalMarketExtractor(
-        browser_helper=browser_helper,
         scroller=scroller,
         tab_navigator=tab_navigator,
+        selection_manager=selection_manager,
     )
 
     scraper = OddsPortalScraper(
         playwright_manager=playwright_manager,
-        browser_helper=browser_helper,
         market_extractor=market_extractor,
         scroller=scroller,
         cookie_dismisser=cookie_dismisser,
+        selection_manager=selection_manager,
         preview_submarkets_only=preview_submarkets_only,
     )
 

@@ -4,7 +4,6 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from playwright.async_api import Browser, BrowserContext, Page
 import pytest
 
-from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.odds_portal_scraper import LinkCollectionResult, OddsPortalScraper
 from oddsharvester.core.playwright_manager import PlaywrightManager
@@ -17,7 +16,6 @@ def setup_scraper_mocks():
     """Setup common mocks for the OddsPortalScraper tests."""
     # Create mocks for dependencies
     playwright_manager_mock = MagicMock(spec=PlaywrightManager)
-    browser_helper_mock = MagicMock(spec=BrowserHelper)
     market_extractor_mock = MagicMock(spec=OddsPortalMarketExtractor)
 
     # Setup page and context mocks
@@ -37,16 +35,15 @@ def setup_scraper_mocks():
     # Create scraper instance with mocks
     scraper = OddsPortalScraper(
         playwright_manager=playwright_manager_mock,
-        browser_helper=browser_helper_mock,
         market_extractor=market_extractor_mock,
         scroller=AsyncMock(),
         cookie_dismisser=cookie_dismisser_mock,
+        selection_manager=AsyncMock(),
     )
 
     return {
         "scraper": scraper,
         "playwright_manager_mock": playwright_manager_mock,
-        "browser_helper_mock": browser_helper_mock,
         "market_extractor_mock": market_extractor_mock,
         "cookie_dismisser_mock": cookie_dismisser_mock,
         "page_mock": page_mock,
