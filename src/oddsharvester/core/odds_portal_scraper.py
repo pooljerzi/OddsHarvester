@@ -172,7 +172,7 @@ class OddsPortalScraper(BaseScraper):
 
         # Scroll to load all matches due to lazy loading
         self.logger.info("Scrolling page to load all upcoming matches...")
-        await self.browser_helper.scroll_until_loaded(
+        await self.scroller.scroll_until_loaded(
             page=current_page,
             timeout=30,
             scroll_pause_time=2,
@@ -374,7 +374,7 @@ class OddsPortalScraper(BaseScraper):
                 await tab.wait_for_timeout(delay)
 
                 self.logger.info(f"Scrolling page {page_number} to load all matches...")
-                scroll_success = await self.browser_helper.scroll_until_loaded(
+                scroll_success = await self.scroller.scroll_until_loaded(
                     page=tab,
                     timeout=30,
                     scroll_pause_time=2,

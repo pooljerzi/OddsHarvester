@@ -1,5 +1,6 @@
 import logging
 
+from oddsharvester.core.browser.scrolling import PageScroller
 from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.odds_portal_scraper import OddsPortalScraper
@@ -69,12 +70,14 @@ async def run_scraper(
     SportMarketRegistrar.register_all_markets()
     playwright_manager = PlaywrightManager()
     browser_helper = BrowserHelper()
-    market_extractor = OddsPortalMarketExtractor(browser_helper=browser_helper)
+    scroller = PageScroller()
+    market_extractor = OddsPortalMarketExtractor(browser_helper=browser_helper, scroller=scroller)
 
     scraper = OddsPortalScraper(
         playwright_manager=playwright_manager,
         browser_helper=browser_helper,
         market_extractor=market_extractor,
+        scroller=scroller,
         preview_submarkets_only=preview_submarkets_only,
     )
 

@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from bs4 import BeautifulSoup
 from playwright.async_api import Page, TimeoutError
 
+from oddsharvester.core.browser.scrolling import PageScroller
 from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.odds_portal_market_extractor import OddsPortalMarketExtractor
 from oddsharvester.core.odds_portal_selectors import OddsPortalSelectors
@@ -136,6 +137,7 @@ class BaseScraper:
         playwright_manager: PlaywrightManager,
         browser_helper: BrowserHelper,
         market_extractor: OddsPortalMarketExtractor,
+        scroller: PageScroller,
         preview_submarkets_only: bool = False,
     ):
         """
@@ -143,6 +145,7 @@ class BaseScraper:
             playwright_manager (PlaywrightManager): Handles Playwright lifecycle.
             browser_helper (BrowserHelper): Helper class for browser interactions.
             market_extractor (OddsPortalMarketExtractor): Handles market scraping.
+            scroller (PageScroller): Handles incremental page scrolling.
             preview_submarkets_only (bool): If True, only scrape average odds from visible submarkets without loading
             individual bookmaker details.
         """
@@ -150,6 +153,7 @@ class BaseScraper:
         self.playwright_manager = playwright_manager
         self.browser_helper = browser_helper
         self.market_extractor = market_extractor
+        self.scroller = scroller
         self.preview_submarkets_only = preview_submarkets_only
 
     async def set_odds_format(self, page: Page, odds_format: OddsFormat = OddsFormat.DECIMAL_ODDS):

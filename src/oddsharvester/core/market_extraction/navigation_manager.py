@@ -2,6 +2,7 @@ import logging
 
 from playwright.async_api import Page
 
+from oddsharvester.core.browser.scrolling import PageScroller
 from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.utils.constants import DEFAULT_MARKET_TIMEOUT_MS, MARKET_SWITCH_WAIT_TIME_MS, SCROLL_PAUSE_TIME_MS
 
@@ -9,10 +10,15 @@ from oddsharvester.utils.constants import DEFAULT_MARKET_TIMEOUT_MS, MARKET_SWIT
 class NavigationManager:
     """Handles browser navigation for market extraction."""
 
-    def __init__(self, browser_helper: BrowserHelper):
-        """Initialize NavigationManager."""
+    def __init__(self, browser_helper: BrowserHelper, scroller: PageScroller):
+        """Initialize NavigationManager.
+
+        Note: `browser_helper` is kept for now (still used for navigate_to_market_tab).
+        It will be removed in Task 4.
+        """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.browser_helper = browser_helper
+        self.scroller = scroller
 
     async def navigate_to_market_tab(self, page: Page, market_tab_name: str) -> bool:
         """Navigate to a specific market tab."""
@@ -55,7 +61,7 @@ class NavigationManager:
 
     async def select_specific_market(self, page: Page, specific_market: str) -> bool:
         """Select a specific submarket within the main market."""
-        return await self.browser_helper.scroll_until_visible_and_click_parent(
+        return await self.scroller.scroll_until_visible_and_click_parent(
             page=page,
             selector="div.flex.w-full.items-center.justify-start.pl-3.font-bold p",
             text=specific_market,
@@ -64,7 +70,7 @@ class NavigationManager:
     async def close_specific_market(self, page: Page, specific_market: str) -> bool:
         """Close a specific submarket after scraping."""
         self.logger.info(f"Closing sub-market: {specific_market}")
-        return await self.browser_helper.scroll_until_visible_and_click_parent(
+        return await self.scroller.scroll_until_visible_and_click_parent(
             page=page,
             selector="div.flex.w-full.items-center.justify-start.pl-3.font-bold p",
             text=specific_market,

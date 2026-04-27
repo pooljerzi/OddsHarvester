@@ -3,6 +3,7 @@ from typing import Any
 
 from playwright.async_api import Page
 
+from oddsharvester.core.browser.scrolling import PageScroller
 from oddsharvester.core.browser_helper import BrowserHelper
 from oddsharvester.core.market_extraction import (
     MarketGrouping,
@@ -23,18 +24,20 @@ class OddsPortalMarketExtractor:
     for specific match periods and bookmaker odds.
     """
 
-    def __init__(self, browser_helper: BrowserHelper):
+    def __init__(self, browser_helper: BrowserHelper, scroller: PageScroller):
         """
         Initialize OddsPortalMarketExtractor.
 
         Args:
             browser_helper (BrowserHelper): Helper class for browser interactions.
+            scroller (PageScroller): Handles incremental page scrolling.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.browser_helper = browser_helper
+        self.scroller = scroller
 
         # Initialize component classes
-        self.navigation_manager = NavigationManager(browser_helper)
+        self.navigation_manager = NavigationManager(browser_helper, scroller)
         self.odds_parser = OddsParser()
         self.submarket_extractor = SubmarketExtractor()
         self.odds_history_extractor = OddsHistoryExtractor()

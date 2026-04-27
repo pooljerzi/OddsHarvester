@@ -62,7 +62,7 @@ class TestOddsPortalMarketExtractor:
     @pytest.fixture
     def extractor(self, browser_helper_mock):
         """Create an instance of OddsPortalMarketExtractor with a mocked BrowserHelper."""
-        return OddsPortalMarketExtractor(browser_helper_mock)
+        return OddsPortalMarketExtractor(browser_helper_mock, scroller=AsyncMock())
 
     @pytest.fixture
     def page_mock(self):
@@ -238,7 +238,7 @@ class TestOddsPortalMarketExtractor:
         """Test extracting odds with a specific sub-market."""
         # Arrange
         browser_helper_mock.navigate_to_market_tab = AsyncMock(return_value=True)
-        browser_helper_mock.scroll_until_visible_and_click_parent = AsyncMock(return_value=True)
+        extractor.navigation_manager.scroller.scroll_until_visible_and_click_parent = AsyncMock(return_value=True)
         extractor.odds_parser.parse_market_odds = MagicMock(
             return_value=[
                 {"bookmaker_name": "Bookmaker1", "odds_over": "1.90", "odds_under": "1.90", "period": "FullTime"}
@@ -261,7 +261,7 @@ class TestOddsPortalMarketExtractor:
 
         # Assert
         browser_helper_mock.navigate_to_market_tab.assert_called_once()
-        browser_helper_mock.scroll_until_visible_and_click_parent.assert_called()
+        extractor.navigation_manager.scroller.scroll_until_visible_and_click_parent.assert_called()
         assert len(result) == 1
         assert result[0]["bookmaker_name"] == "Bookmaker1"
 
@@ -286,7 +286,7 @@ class TestOddsPortalMarketExtractor:
         """Test behavior when the specific market is not found."""
         # Arrange
         browser_helper_mock.navigate_to_market_tab = AsyncMock(return_value=True)
-        browser_helper_mock.scroll_until_visible_and_click_parent = AsyncMock(return_value=False)
+        extractor.navigation_manager.scroller.scroll_until_visible_and_click_parent = AsyncMock(return_value=False)
 
         mock_active_tab = AsyncMock()
         mock_active_tab.text_content = AsyncMock(return_value="Over/Under")

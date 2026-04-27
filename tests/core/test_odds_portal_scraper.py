@@ -40,6 +40,7 @@ def setup_scraper_mocks():
         playwright_manager=playwright_manager_mock,
         browser_helper=browser_helper_mock,
         market_extractor=market_extractor_mock,
+        scroller=AsyncMock(),
     )
 
     return {
