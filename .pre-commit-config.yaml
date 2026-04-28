@@ -46,3 +46,4 @@ repos:
         name: check use type annotations
       - id: text-unicode-replacement-char
         name: check for unicode replacement chars
+        exclude: '\.har$'
