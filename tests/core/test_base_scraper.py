@@ -1,5 +1,4 @@
 from datetime import date, datetime, timedelta
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 from zoneinfo import ZoneInfo
 
@@ -540,55 +539,27 @@ async def test_scrape_match_data_no_details(setup_base_scraper_mocks):
 
 
 @pytest.mark.asyncio
-@patch("oddsharvester.core.base_scraper.BeautifulSoup")
-@patch("oddsharvester.core.base_scraper.json")
-async def test_extract_match_details_event_header(json_mock, bs4_mock, setup_base_scraper_mocks):
-    """Test extracting match details from the react event header."""
+async def test_extract_match_details_event_header(setup_base_scraper_mocks):
+    """Happy path: minimal valid JSON + no DOM landmarks → JSON-only extraction."""
     mocks = setup_base_scraper_mocks
     scraper = mocks["scraper"]
     page_mock = mocks["page_mock"]
 
-    # Mock BeautifulSoup and its find method
-    soup_mock = MagicMock()
-    bs4_mock.return_value = soup_mock
-
-    # Mock the div with event header data
-    event_header_div = MagicMock()
-    event_header_div.__getitem__.return_value = (
+    json_blob = (
         '{"eventBody": {"startDate": 1681753200, "homeResult": 2, "awayResult": 1, '
         '"partialresult": "1-0", "venue": "Emirates Stadium", "venueTown": "London", '
         '"venueCountry": "England"}, "eventData": {"home": "Arsenal", "away": "Chelsea", '
         '"tournamentName": "Premier League"}}'
     )
-    soup_mock.find.return_value = event_header_div
-
-    # Mock JSON parsing
-    parsed_data = {
-        "eventBody": {
-            "startDate": 1681753200,
-            "homeResult": 2,
-            "awayResult": 1,
-            "partialresult": "1-0",
-            "venue": "Emirates Stadium",
-            "venueTown": "London",
-            "venueCountry": "England",
-        },
-        "eventData": {"home": "Arsenal", "away": "Chelsea", "tournamentName": "Premier League"},
-    }
-    json_mock.loads.return_value = parsed_data
-
-    # Call the method under test
-    result = await scraper._extract_match_details_event_header(
-        page=page_mock, match_link="https://www.oddsportal.com/football/england/arsenal-chelsea-123456"
+    page_mock.content = AsyncMock(
+        return_value=f"<html><body><div id=\"react-event-header\" data='{json_blob}'></div></body></html>"
     )
 
-    # Verify interactions
-    page_mock.content.assert_called_once()
-    bs4_mock.assert_called_once_with(page_mock.content.return_value, "html.parser")
-    soup_mock.find.assert_called_once_with("div", id="react-event-header")
-    json_mock.loads.assert_called_once()
+    result = await scraper._extract_match_details_event_header(
+        page=page_mock,
+        match_link="https://www.oddsportal.com/football/england/arsenal-chelsea-123456",
+    )
 
-    # Verify the result has expected fields
     assert result["match_link"] == "https://www.oddsportal.com/football/england/arsenal-chelsea-123456"
     assert result["home_team"] == "Arsenal"
     assert result["away_team"] == "Chelsea"
@@ -604,54 +575,32 @@ async def test_extract_match_details_event_header(json_mock, bs4_mock, setup_bas
 
 
 @pytest.mark.asyncio
-@patch("oddsharvester.core.base_scraper.BeautifulSoup")
-async def test_extract_match_details_missing_div(bs4_mock, setup_base_scraper_mocks):
-    """Test extracting match details when the header div is missing."""
+async def test_extract_match_details_missing_div(setup_base_scraper_mocks):
+    """When the react-event-header div is absent, return None."""
     mocks = setup_base_scraper_mocks
     scraper = mocks["scraper"]
     page_mock = mocks["page_mock"]
+    page_mock.content = AsyncMock(return_value="<html><body></body></html>")
 
-    # Mock BeautifulSoup and its find method returning None
-    soup_mock = MagicMock()
-    bs4_mock.return_value = soup_mock
-    soup_mock.find.return_value = None
-
-    # Call the method under test
     result = await scraper._extract_match_details_event_header(
         page=page_mock, match_link="https://www.oddsportal.com/football/england/test-match"
     )
-
-    # Verify result is None when the div is missing
     assert result is None
 
 
 @pytest.mark.asyncio
-@patch("oddsharvester.core.base_scraper.BeautifulSoup")
-@patch("oddsharvester.core.base_scraper.json")
-async def test_extract_match_details_invalid_json(json_mock, bs4_mock, setup_base_scraper_mocks):
-    """Test extracting match details with invalid JSON data."""
+async def test_extract_match_details_invalid_json(setup_base_scraper_mocks):
+    """When the data attribute isn't valid JSON, return None."""
     mocks = setup_base_scraper_mocks
     scraper = mocks["scraper"]
     page_mock = mocks["page_mock"]
+    page_mock.content = AsyncMock(
+        return_value='<html><body><div id="react-event-header" data="not-json{"></div></body></html>'
+    )
 
-    # Mock BeautifulSoup and its find method
-    soup_mock = MagicMock()
-    bs4_mock.return_value = soup_mock
-
-    # Mock the div with invalid data
-    event_header_div = MagicMock()
-    event_header_div.__getitem__.return_value = "invalid JSON"
-    soup_mock.find.return_value = event_header_div
-
-    # Mock JSON parsing error
-    json_mock.loads.side_effect = json.JSONDecodeError("Invalid JSON", "invalid JSON", 0)
-
-    # Call the method under test
     result = await scraper._extract_match_details_event_header(
         page=page_mock, match_link="https://www.oddsportal.com/football/england/test-match"
     )
-
-    # Verify result is None when JSON is invalid
     assert result is None
 
 
