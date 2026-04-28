@@ -577,6 +577,30 @@ class BaseScraper:
             self.logger.warning(f"DOM parse failed for teams: {e}")
             return None, None
 
+    _SEASON_SUFFIX_RE = re.compile(r"\s+\d{4}/\d{4}$")
+
+    def _parse_league_from_dom(self, soup: BeautifulSoup) -> str | None:
+        """
+        Extract the league name from the breadcrumb navigation, stripping
+        the trailing season suffix when present (e.g. "Premier League 2024/2025"
+        -> "Premier League"). Returns None if the breadcrumb or league link is
+        missing.
+        """
+        try:
+            breadcrumbs = soup.find("div", attrs={"data-testid": OddsPortalSelectors.MATCH_DETAILS_BREADCRUMBS_TESTID})
+            if not breadcrumbs:
+                return None
+            league_link = breadcrumbs.find(
+                "a", attrs={"data-testid": OddsPortalSelectors.MATCH_DETAILS_BREADCRUMB_LEAGUE_TESTID}
+            )
+            if not league_link:
+                return None
+            raw = league_link.get_text(strip=True)
+            return self._SEASON_SUFFIX_RE.sub("", raw) or None
+        except Exception as e:
+            self.logger.warning(f"DOM parse failed for league_name: {e}")
+            return None
+
     async def _extract_match_details_event_header(self, page: Page, match_link: str) -> dict[str, Any] | None:
         """
         Extract match details such as date, teams, and scores from the react event header.

@@ -808,3 +808,46 @@ def test_parse_teams_from_dom_returns_none_pair_when_both_missing(setup_base_scr
     scraper = setup_base_scraper_mocks["scraper"]
     soup = BeautifulSoup("<html><body></body></html>", "html.parser")
     assert scraper._parse_teams_from_dom(soup) == (None, None)
+
+
+def _make_league_html(text: str | None = "Premier League 2024/2025", with_link: bool = True) -> str:
+    if not with_link:
+        return '<html><body><div data-testid="breadcrumbs-line"></div></body></html>'
+    return (
+        f'<html><body><div data-testid="breadcrumbs-line">'
+        f'<a data-testid="0">Football</a>'
+        f'<a data-testid="1">England</a>'
+        f'<a data-testid="2">Premier League</a>'
+        f'<a data-testid="3">{text}</a>'
+        f"</div></body></html>"
+    )
+
+
+def test_parse_league_from_dom_strips_season_suffix(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_league_html("Premier League 2024/2025"), "html.parser")
+    assert scraper._parse_league_from_dom(soup) == "Premier League"
+
+
+def test_parse_league_from_dom_keeps_name_without_suffix(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_league_html("LaLiga"), "html.parser")
+    assert scraper._parse_league_from_dom(soup) == "LaLiga"
+
+
+def test_parse_league_from_dom_handles_multiple_spaces_before_suffix(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_league_html("LaLiga  2019/2020"), "html.parser")
+    assert scraper._parse_league_from_dom(soup) == "LaLiga"
+
+
+def test_parse_league_from_dom_returns_none_when_link_missing(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_league_html(with_link=False), "html.parser")
+    assert scraper._parse_league_from_dom(soup) is None
+
+
+def test_parse_league_from_dom_returns_none_when_breadcrumb_missing(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup("<html><body></body></html>", "html.parser")
+    assert scraper._parse_league_from_dom(soup) is None
