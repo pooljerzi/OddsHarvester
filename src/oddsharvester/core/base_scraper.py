@@ -635,21 +635,21 @@ class BaseScraper:
 
     async def _extract_match_details_event_header(self, page: Page, match_link: str) -> dict[str, Any] | None:
         """
-        Extract match details such as date, teams, and scores from the react event header.
+        Extract match details (date, teams, league, scores, venue) from the
+        match page.
 
-        Args:
-            page (Page): A Playwright Page instance for this task.
-            match_link (str): The link to the match page.
+        Reads the React event header JSON for venue fields and as a per-field
+        fallback. Prefers DOM values for date / teams / league / scores
+        because the embedded JSON has been observed to return stale values
+        for some leagues (see PR #54).
 
-        Returns:
-            Optional[Dict[str, Any]]: A dictionary containing match details, or None if header is not found.
+        Returns None if neither the JSON nor the DOM yield enough data to
+        identify the match (i.e. the react-event-header div itself is missing).
         """
         try:
-            # Wait for the react event header to be loaded
             try:
                 await page.wait_for_selector("#react-event-header", timeout=SELECTOR_TIMEOUT_MS)
             except Exception:
-                # If we can't find the selector, try to get the content anyway
                 self.logger.warning("React event header selector not found, attempting to parse existing content")
 
             html_content = await page.content()
@@ -660,7 +660,6 @@ class BaseScraper:
                 self.logger.warning("React event header div not found in page content")
                 return None
 
-            # Check if the div has the 'data' attribute
             data_attribute = event_header_div.get("data")
             if not data_attribute:
                 self.logger.warning("React event header div found but 'data' attribute is missing")
@@ -674,24 +673,54 @@ class BaseScraper:
 
             event_body = json_data.get("eventBody", {})
             event_data = json_data.get("eventData", {})
-            unix_timestamp = event_body.get("startDate")
 
-            match_date = (
-                datetime.fromtimestamp(unix_timestamp, tz=UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
-                if unix_timestamp
+            json_match_date = (
+                datetime.fromtimestamp(event_body["startDate"], tz=UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
+                if event_body.get("startDate")
                 else None
             )
+
+            # DOM extraction (each helper returns None on failure)
+            dom_match_date = self._parse_match_date_from_dom(soup)
+            dom_home, dom_away = self._parse_teams_from_dom(soup)
+            dom_league = self._parse_league_from_dom(soup)
+            dom_home_score, dom_away_score, dom_partial = self._parse_results_from_dom(soup)
+
+            # Per-field fallback: DOM wins when present, else JSON
+            match_date = dom_match_date if dom_match_date is not None else json_match_date
+            home_team = dom_home if dom_home is not None else event_data.get("home")
+            away_team = dom_away if dom_away is not None else event_data.get("away")
+            league_name = dom_league if dom_league is not None else event_data.get("tournamentName")
+            home_score = dom_home_score if dom_home_score is not None else event_body.get("homeResult")
+            away_score = dom_away_score if dom_away_score is not None else event_body.get("awayResult")
+            partial_results = (
+                dom_partial if dom_partial is not None else clean_html_text(event_body.get("partialresult"))
+            )
+
+            # Observability: log which fields came from DOM vs. JSON fallback
+            sources = {
+                "match_date": "dom" if dom_match_date is not None else "json",
+                "home_team": "dom" if dom_home is not None else "json",
+                "away_team": "dom" if dom_away is not None else "json",
+                "league_name": "dom" if dom_league is not None else "json",
+                "home_score": "dom" if dom_home_score is not None else "json",
+                "away_score": "dom" if dom_away_score is not None else "json",
+                "partial_results": "dom" if dom_partial is not None else "json",
+            }
+            dom_fields = sorted(k for k, v in sources.items() if v == "dom")
+            json_fields = sorted(k for k, v in sources.items() if v == "json")
+            self.logger.info(f"match_details extracted dom={dom_fields} json_fallback={json_fields}")
 
             return {
                 "scraped_date": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S %Z"),
                 "match_date": match_date,
                 "match_link": match_link,
-                "home_team": event_data.get("home"),
-                "away_team": event_data.get("away"),
-                "league_name": event_data.get("tournamentName"),
-                "home_score": event_body.get("homeResult"),
-                "away_score": event_body.get("awayResult"),
-                "partial_results": clean_html_text(event_body.get("partialresult")),
+                "home_team": home_team,
+                "away_team": away_team,
+                "league_name": league_name,
+                "home_score": home_score,
+                "away_score": away_score,
+                "partial_results": partial_results,
                 "venue": event_body.get("venue").encode("ascii", "ignore").decode("ascii")
                 if event_body.get("venue")
                 else None,

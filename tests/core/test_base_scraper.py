@@ -905,3 +905,131 @@ def test_parse_results_from_dom_normalizes_nbsp_in_partial(setup_base_scraper_mo
     assert home == "2"
     assert away == "1"
     assert partial == "(1:0, 1:1)"
+
+
+@pytest.mark.asyncio
+async def test_extract_match_details_dom_first_overrides_wrong_json(setup_base_scraper_mocks):
+    """
+    Regression for PR #54: when the JSON eventBody contains wrong values
+    but the DOM has the correct ones, DOM wins for the 5 affected fields
+    while JSON still provides venue trio.
+    """
+    mocks = setup_base_scraper_mocks
+    scraper = mocks["scraper"]
+    page_mock = mocks["page_mock"]
+    mocks["playwright_manager_mock"].timezone_id = "UTC"
+
+    # Wrong JSON values (simulating the PR #54 bug for Barcelona-Leganes)
+    wrong_json = (
+        '{"eventBody": {"startDate": 1745000000, "homeResult": 0, "awayResult": 1, '
+        '"partialresult": "0:0, 0:1", "venue": "Camp Nou", "venueTown": "Barcelona", '
+        '"venueCountry": "Spain"}, "eventData": {"home": "Leganes", "away": "Barcelona", '
+        '"tournamentName": "LaLiga 2024/2025"}}'
+    )
+
+    page_mock.content = AsyncMock(
+        return_value=f"""
+        <html><body>
+          <div id="react-event-header" data='{wrong_json}'></div>
+          <section>
+            <div data-testid="game-time-item"><p>Sun</p><p>17 Nov 2019,</p><p>20:00</p></div>
+            <div data-testid="game-host"><p>Leganes</p></div>
+            <div data-testid="game-guest"><p>Barcelona</p></div>
+            <div data-testid="breadcrumbs-line">
+              <a data-testid="3">LaLiga 2019/2020</a>
+            </div>
+            <div><div class="flex flex-wrap">Final result 2:0 (1:0, 1:0)</div></div>
+          </section>
+        </body></html>
+        """
+    )
+
+    result = await scraper._extract_match_details_event_header(
+        page=page_mock, match_link="https://example.test/barcelona-leganes"
+    )
+
+    # DOM-sourced fields override the (wrong) JSON
+    assert result["match_date"] == "2019-11-17 20:00:00 UTC"
+    assert result["home_team"] == "Leganes"
+    assert result["away_team"] == "Barcelona"
+    assert result["league_name"] == "LaLiga"
+    assert result["home_score"] == "2"
+    assert result["away_score"] == "0"
+    assert result["partial_results"] == "(1:0, 1:0)"
+    # Venue trio still from JSON
+    assert result["venue"] == "Camp Nou"
+    assert result["venue_town"] == "Barcelona"
+    assert result["venue_country"] == "Spain"
+
+
+@pytest.mark.asyncio
+async def test_extract_match_details_falls_back_to_json_per_field(setup_base_scraper_mocks):
+    """
+    When DOM is partial (only teams + date present), other affected fields
+    fall back to the JSON values individually.
+    """
+    mocks = setup_base_scraper_mocks
+    scraper = mocks["scraper"]
+    page_mock = mocks["page_mock"]
+    mocks["playwright_manager_mock"].timezone_id = "UTC"
+
+    json_blob = (
+        '{"eventBody": {"startDate": 1681753200, "homeResult": 9, "awayResult": 9, '
+        '"partialresult": "json-partial", "venue": "Vaa", "venueTown": "Vt", '
+        '"venueCountry": "Vc"}, "eventData": {"home": "JsonHome", "away": "JsonAway", '
+        '"tournamentName": "JsonLeague"}}'
+    )
+
+    page_mock.content = AsyncMock(
+        return_value=f"""
+        <html><body>
+          <div id="react-event-header" data='{json_blob}'></div>
+          <div data-testid="game-time-item"><p>x</p><p>17 Apr 2023,</p><p>17:40</p></div>
+          <div data-testid="game-host"><p>DomHome</p></div>
+          <div data-testid="game-guest"><p>DomAway</p></div>
+          <!-- No breadcrumb, no result block -->
+        </body></html>
+        """
+    )
+
+    result = await scraper._extract_match_details_event_header(page=page_mock, match_link="https://example.test/m")
+
+    # DOM provided
+    assert result["home_team"] == "DomHome"
+    assert result["away_team"] == "DomAway"
+    assert result["match_date"] == "2023-04-17 17:40:00 UTC"
+    # JSON fallback for missing-from-DOM fields
+    assert result["league_name"] == "JsonLeague"
+    assert result["home_score"] == 9
+    assert result["away_score"] == 9
+    assert result["partial_results"] == "json-partial"
+
+
+@pytest.mark.asyncio
+async def test_extract_match_details_full_json_fallback_when_dom_absent(setup_base_scraper_mocks):
+    """When no DOM landmarks are present, behavior matches the pre-fix JSON path."""
+    mocks = setup_base_scraper_mocks
+    scraper = mocks["scraper"]
+    page_mock = mocks["page_mock"]
+
+    json_blob = (
+        '{"eventBody": {"startDate": 1681753200, "homeResult": 2, "awayResult": 1, '
+        '"partialresult": "1-0", "venue": "Emirates", "venueTown": "London", '
+        '"venueCountry": "England"}, "eventData": {"home": "Arsenal", "away": "Chelsea", '
+        '"tournamentName": "Premier League"}}'
+    )
+
+    page_mock.content = AsyncMock(
+        return_value=f"<html><body><div id=\"react-event-header\" data='{json_blob}'></div></body></html>"
+    )
+
+    result = await scraper._extract_match_details_event_header(page=page_mock, match_link="https://example.test/m")
+
+    assert result["home_team"] == "Arsenal"
+    assert result["away_team"] == "Chelsea"
+    assert result["league_name"] == "Premier League"
+    assert result["home_score"] == 2
+    assert result["away_score"] == 1
+    assert result["partial_results"] == "1-0"
+    assert result["match_date"] == "2023-04-17 17:40:00 UTC"
+    assert result["venue"] == "Emirates"
