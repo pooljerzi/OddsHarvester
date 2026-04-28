@@ -67,6 +67,25 @@ def build_fixture_filename(
     return f"{markets_str}_{period}_{bookies_filter}.json"
 
 
+def _strip_har_fragments(har_path: Path) -> None:
+    """Strip URL fragments from request URLs and 30x Location headers.
+
+    Playwright's `route_from_har` with `not_found="abort"` fails to follow a redirect
+    when the Location header contains a fragment (e.g. `https://.../page#anchor`),
+    because the fragmented URL doesn't match any HAR entry on the next hop. HTTP
+    fragments are client-only and never reach the server, so dropping them is safe.
+    """
+    har = json.loads(har_path.read_text())
+    for entry in har.get("log", {}).get("entries", []):
+        request_url = entry.get("request", {}).get("url", "")
+        if "#" in request_url:
+            entry["request"]["url"] = request_url.split("#", 1)[0]
+        for header in entry.get("response", {}).get("headers", []):
+            if header.get("name", "").lower() == "location" and "#" in header.get("value", ""):
+                header["value"] = header["value"].split("#", 1)[0]
+    har_path.write_text(json.dumps(har))
+
+
 def capture_fixture(
     sport: str,
     league: str,
@@ -159,6 +178,9 @@ def capture_fixture(
 
     if capture_har and not har_path.exists():
         raise RuntimeError(f"HAR file not created: {har_path}")
+
+    if capture_har:
+        _strip_har_fragments(har_path)
 
     # Load scraped data to extract metadata
     with open(output_path) as f:
