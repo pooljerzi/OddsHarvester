@@ -21,8 +21,11 @@ uv run oddsharvester scrape-historic --sport football --leagues england-premier-
 # Run unit tests
 uv run pytest tests/ -q --ignore=tests/integration/
 
-# Run integration tests (requires internet, slower)
+# Run integration tests (default mode: HAR replay, deterministic, no network)
 uv run pytest tests/integration/ -q -m integration
+
+# Run integration tests against live OddsPortal (slower, hits the network)
+uv run pytest tests/integration/ -q -m integration --live
 
 # Run a single test file
 uv run pytest tests/core/test_url_builder.py -q
@@ -97,6 +100,30 @@ CLI Layer (src/oddsharvester/cli/) → Core Layer (src/oddsharvester/core/) → 
    "league-slug": "https://www.oddsportal.com/{sport}/{country}/{league}/",
    ```
 3. The slug should be lowercase with hyphens (e.g., `croatia-hnl`, `japan-j1-league`)
+
+## Integration Tests — HAR Replay
+
+Integration tests under `tests/integration/` run in **HAR replay mode by default** (deterministic, no network). The scraper is exercised against a recorded `<fixture-stem>.har` per JSON fixture instead of hitting `oddsportal.com` live. Two pytest hooks drive this:
+
+- **`har_for_match` fixture** (`tests/integration/conftest.py`): returns the path to `<fixture-stem>.har` next to each JSON fixture, or `None` when the HAR is missing or `--live` is passed. Tests pass it as `har_path=` to `run_scraper`.
+- **`PlaywrightManager`** reads `ODDSHARVESTER_HAR_REPLAY` (set by `run_scraper` from `har_path`) and wires `context.route_from_har(...)` with `not_found="abort"`. Symmetric env var `ODDSHARVESTER_HAR_RECORD` is used during capture.
+
+**Run modes:**
+- Default (`pytest tests/integration/ -m integration`) — replay only, `live_only` tests skipped.
+- `--live` flag — bypasses HAR replay, runs every test against the real OddsPortal (slow, flaky on fixture drift, used for nightly health checks and capturing fresh fixtures).
+
+**Capturing / refreshing fixtures:**
+```bash
+# Single match (writes both JSON output and the .har sibling)
+uv run python -m tests.integration.helpers.capture --sport football --league premier-league \
+    --match-url "https://..." --markets "1x2" --period "full_time" --bookies-filter "all" --capture-har
+
+# Bulk re-capture every match dir under tests/integration/fixtures/
+uv run python scripts/capture_all_hars.py
+```
+Recapture when scraper parsing changes, after a Playwright upgrade, or quarterly to refresh against current OddsPortal HTML.
+
+**Known limitation — `live_only` tests:** OddsPortal H2H pages (basketball NBA, real-madrid-barcelona, djokovic-sinner) use URL fragments (`#match_id`) to select which match in an H2H series to render, plus cache-busted AJAX endpoints (`?<runtime-hash>`) to fetch match-specific data. HAR replay can't reproduce both: the fragment is preserved on `location.hash`, but JS computes a new cache-buster at runtime that doesn't match the recorded URL, so the page falls back to a different match in the series. These tests are marked `@pytest.mark.live_only` and skipped in default mode; run them with `--live` when validating against the live site. The 8 fixtures that *don't* trigger the H2H redirect chain (leicester-brentford, djokovic-lehecka, humbert-zverev) replay cleanly. See `tests/integration/helpers/capture.py:_alias_fragmented_redirect_targets` for the workaround that handles the redirect-with-fragment case.
 
 ## Code Style
 
