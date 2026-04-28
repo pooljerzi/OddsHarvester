@@ -48,3 +48,31 @@ async def test_route_from_har_not_called_when_env_var_unset(mock_playwright, mon
     await pm.initialize(headless=True)
 
     mock_playwright["context"].route_from_har.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_record_har_kwargs_when_record_env_var_set(mock_playwright, monkeypatch, tmp_path):
+    har_path = tmp_path / "snapshot.har"
+    monkeypatch.setenv("ODDSHARVESTER_HAR_RECORD", str(har_path))
+
+    pm = PlaywrightManager()
+    await pm.initialize(headless=True)
+
+    mock_playwright["browser"].new_context.assert_awaited_once()
+    call_kwargs = mock_playwright["browser"].new_context.await_args.kwargs
+    assert call_kwargs["record_har_path"] == har_path
+    assert call_kwargs["record_har_mode"] == "full"
+    assert call_kwargs["record_har_url_filter"] == "**/oddsportal.com/**"
+
+
+@pytest.mark.asyncio
+async def test_record_har_kwargs_absent_when_env_var_unset(mock_playwright, monkeypatch):
+    monkeypatch.delenv("ODDSHARVESTER_HAR_RECORD", raising=False)
+
+    pm = PlaywrightManager()
+    await pm.initialize(headless=True)
+
+    call_kwargs = mock_playwright["browser"].new_context.await_args.kwargs
+    assert "record_har_path" not in call_kwargs
+    assert "record_har_mode" not in call_kwargs
+    assert "record_har_url_filter" not in call_kwargs

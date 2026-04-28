@@ -20,6 +20,7 @@ This will:
 import argparse
 from datetime import UTC, datetime
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -77,6 +78,7 @@ def capture_fixture(
     headless: bool = True,
     timeout: int = 300,
     season: str = "current",
+    capture_har: bool = False,
 ) -> Path:
     """
     Capture a new fixture from live scraping.
@@ -125,13 +127,20 @@ def capture_fixture(
     if headless:
         cmd.append("--headless")
 
+    har_path = output_dir / "snapshot.har"
+
     # Run scraper
     print(f"Running scraper for {match_url}...")
     print(f"Command: {' '.join(cmd)}")
     print()
 
+    env = os.environ.copy()
+    if capture_har:
+        env["ODDSHARVESTER_HAR_RECORD"] = str(har_path)
+        print(f"Recording HAR to: {har_path}")
+
     result = subprocess.run(  # noqa: S603
-        cmd, capture_output=True, text=True, cwd=PROJECT_ROOT, timeout=timeout
+        cmd, capture_output=True, text=True, cwd=PROJECT_ROOT, timeout=timeout, env=env
     )
 
     if result.returncode != 0:
@@ -147,6 +156,9 @@ def capture_fixture(
     # Verify output file exists
     if not output_path.exists():
         raise RuntimeError(f"Output file not created: {output_path}")
+
+    if capture_har and not har_path.exists():
+        raise RuntimeError(f"HAR file not created: {har_path}")
 
     # Load scraped data to extract metadata
     with open(output_path) as f:
@@ -237,6 +249,11 @@ Examples:
     parser.add_argument("--no-headless", action="store_true", help="Run browser with GUI (for debugging)")
     parser.add_argument("--timeout", type=int, default=300, help="Timeout in seconds (default: 300)")
     parser.add_argument("--season", default="current", help="Season (default: current, e.g., 2024-2025)")
+    parser.add_argument(
+        "--capture-har",
+        action="store_true",
+        help="Record a HAR file (snapshot.har) alongside the JSON fixture.",
+    )
 
     args = parser.parse_args()
 
@@ -253,6 +270,7 @@ Examples:
             headless=not args.no_headless,
             timeout=args.timeout,
             season=args.season,
+            capture_har=args.capture_har,
         )
         print()
         print("Done!")

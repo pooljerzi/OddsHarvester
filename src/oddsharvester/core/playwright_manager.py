@@ -9,6 +9,7 @@ from oddsharvester.utils.constants import PLAYWRIGHT_BROWSER_ARGS, PLAYWRIGHT_BR
 from oddsharvester.utils.utils import is_running_in_docker
 
 HAR_REPLAY_ENV_VAR = "ODDSHARVESTER_HAR_REPLAY"
+HAR_RECORD_ENV_VAR = "ODDSHARVESTER_HAR_RECORD"
 HAR_REPLAY_URL_PATTERN = "**/oddsportal.com/**"
 
 # Anti-detection script to hide automation signatures
@@ -66,12 +67,20 @@ class PlaywrightManager:
             # Use provided user_agent or random default
             effective_user_agent = user_agent or random.choice(DEFAULT_USER_AGENTS)  # noqa: S311
 
-            self.context = await self.browser.new_context(
-                locale=locale,
-                timezone_id=timezone_id,
-                user_agent=effective_user_agent,
-                viewport={"width": random.randint(1366, 1920), "height": random.randint(768, 1080)},  # noqa: S311
-            )
+            context_kwargs = {
+                "locale": locale,
+                "timezone_id": timezone_id,
+                "user_agent": effective_user_agent,
+                "viewport": {"width": random.randint(1366, 1920), "height": random.randint(768, 1080)},  # noqa: S311
+            }
+            har_record_path = os.environ.get(HAR_RECORD_ENV_VAR)
+            if har_record_path:
+                self.logger.info(f"HAR recording mode active: {har_record_path}")
+                context_kwargs["record_har_path"] = Path(har_record_path)
+                context_kwargs["record_har_mode"] = "full"
+                context_kwargs["record_har_url_filter"] = HAR_REPLAY_URL_PATTERN
+
+            self.context = await self.browser.new_context(**context_kwargs)
 
             # Add anti-detection script
             await self.context.add_init_script(STEALTH_SCRIPT)
