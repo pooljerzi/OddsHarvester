@@ -32,6 +32,7 @@ class TestFootballBasicMarkets:
         load_fixture,
         temp_output_dir,
         fixture_exists,
+        har_for_match,
     ):
         """FB-001: Test 1x2 market, full time, all bookies."""
         fixture_name = "1x2_full_time_all.json"
@@ -53,6 +54,9 @@ class TestFootballBasicMarkets:
             output_path=output_path,
             period="full_time",
             bookies_filter="all",
+            har_path=har_for_match(
+                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -76,6 +80,7 @@ class TestFootballBasicMarkets:
         load_fixture,
         temp_output_dir,
         fixture_exists,
+        har_for_match,
     ):
         """FB-002: Test 1x2 + btts + double_chance markets."""
         fixture_name = "1x2_btts_double_chance_full_time_all.json"
@@ -95,6 +100,9 @@ class TestFootballBasicMarkets:
             match_link=LEICESTER_BRENTFORD["url"],
             markets=["1x2", "btts", "double_chance"],
             output_path=output_path,
+            har_path=har_for_match(
+                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -118,6 +126,7 @@ class TestFootballBasicMarkets:
         load_fixture,
         temp_output_dir,
         fixture_exists,
+        har_for_match,
     ):
         """FB-003: Test over/under markets."""
         fixture_name = "over_under_1_5_over_under_2_5_full_time_all.json"
@@ -137,6 +146,9 @@ class TestFootballBasicMarkets:
             match_link=LEICESTER_BRENTFORD["url"],
             markets=["over_under_2_5", "over_under_1_5"],
             output_path=output_path,
+            har_path=har_for_match(
+                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -160,6 +172,7 @@ class TestFootballBasicMarkets:
         load_fixture,
         temp_output_dir,
         fixture_exists,
+        har_for_match,
     ):
         """FB-007: Test Real Madrid vs Barcelona."""
         fixture_name = "1x2_btts_full_time_all.json"
@@ -179,6 +192,9 @@ class TestFootballBasicMarkets:
             match_link=REAL_MADRID_BARCELONA["url"],
             markets=["1x2", "btts"],
             output_path=output_path,
+            har_path=har_for_match(
+                REAL_MADRID_BARCELONA["sport"], REAL_MADRID_BARCELONA["league"], REAL_MADRID_BARCELONA["match_id"]
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -207,6 +223,7 @@ class TestFootballPeriods:
         load_fixture,
         temp_output_dir,
         fixture_exists,
+        har_for_match,
     ):
         """FB-005: Test 1x2 market, 1st half period."""
         fixture_name = "1x2_1st_half_all.json"
@@ -227,6 +244,9 @@ class TestFootballPeriods:
             markets=["1x2"],
             output_path=output_path,
             period="1st_half",
+            har_path=har_for_match(
+                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -255,6 +275,7 @@ class TestFootballBookiesFilter:
         load_fixture,
         temp_output_dir,
         fixture_exists,
+        har_for_match,
     ):
         """FB-006: Test 1x2 market with classic bookies only."""
         fixture_name = "1x2_full_time_classic.json"
@@ -275,6 +296,9 @@ class TestFootballBookiesFilter:
             markets=["1x2"],
             output_path=output_path,
             bookies_filter="classic",
+            har_path=har_for_match(
+                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
