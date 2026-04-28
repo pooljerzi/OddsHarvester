@@ -691,8 +691,10 @@ class BaseScraper:
             home_team = dom_home if dom_home is not None else event_data.get("home")
             away_team = dom_away if dom_away is not None else event_data.get("away")
             league_name = dom_league if dom_league is not None else event_data.get("tournamentName")
-            home_score = dom_home_score if dom_home_score is not None else event_body.get("homeResult")
-            away_score = dom_away_score if dom_away_score is not None else event_body.get("awayResult")
+            home_score_raw = dom_home_score if dom_home_score is not None else event_body.get("homeResult")
+            away_score_raw = dom_away_score if dom_away_score is not None else event_body.get("awayResult")
+            home_score = str(home_score_raw) if home_score_raw is not None else None
+            away_score = str(away_score_raw) if away_score_raw is not None else None
             partial_results = (
                 dom_partial if dom_partial is not None else clean_html_text(event_body.get("partialresult"))
             )

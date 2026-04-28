@@ -564,8 +564,8 @@ async def test_extract_match_details_event_header(setup_base_scraper_mocks):
     assert result["home_team"] == "Arsenal"
     assert result["away_team"] == "Chelsea"
     assert result["league_name"] == "Premier League"
-    assert result["home_score"] == 2
-    assert result["away_score"] == 1
+    assert result["home_score"] == "2"
+    assert result["away_score"] == "1"
     assert result["partial_results"] == "1-0"
     assert result["venue"] == "Emirates Stadium"
     assert result["venue_town"] == "London"
@@ -949,8 +949,8 @@ async def test_extract_match_details_falls_back_to_json_per_field(setup_base_scr
     assert result["match_date"] == "2023-04-17 17:40:00 UTC"
     # JSON fallback for missing-from-DOM fields
     assert result["league_name"] == "JsonLeague"
-    assert result["home_score"] == 9
-    assert result["away_score"] == 9
+    assert result["home_score"] == "9"
+    assert result["away_score"] == "9"
     assert result["partial_results"] == "json-partial"
 
 
@@ -977,8 +977,8 @@ async def test_extract_match_details_full_json_fallback_when_dom_absent(setup_ba
     assert result["home_team"] == "Arsenal"
     assert result["away_team"] == "Chelsea"
     assert result["league_name"] == "Premier League"
-    assert result["home_score"] == 2
-    assert result["away_score"] == 1
+    assert result["home_score"] == "2"
+    assert result["away_score"] == "1"
     assert result["partial_results"] == "1-0"
     assert result["match_date"] == "2023-04-17 17:40:00 UTC"
     assert result["venue"] == "Emirates"
