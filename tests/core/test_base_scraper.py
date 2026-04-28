@@ -706,3 +706,29 @@ async def test_extract_match_odds_no_delay_when_zero(mock_sleep, setup_base_scra
 
     mock_sleep.assert_not_called()
     assert len(result.success) == 2
+
+
+def test_resolved_browser_timezone_defaults_to_utc(setup_base_scraper_mocks):
+    mocks = setup_base_scraper_mocks
+    scraper = mocks["scraper"]
+    mocks["playwright_manager_mock"].timezone_id = None
+    assert scraper._resolved_browser_timezone() == ZoneInfo("UTC")
+
+
+def test_resolved_browser_timezone_uses_configured_tz(setup_base_scraper_mocks):
+    mocks = setup_base_scraper_mocks
+    scraper = mocks["scraper"]
+    mocks["playwright_manager_mock"].timezone_id = "Europe/Brussels"
+    assert scraper._resolved_browser_timezone() == ZoneInfo("Europe/Brussels")
+
+
+def test_resolved_browser_timezone_falls_back_on_unknown(setup_base_scraper_mocks, caplog):
+    import logging
+
+    mocks = setup_base_scraper_mocks
+    scraper = mocks["scraper"]
+    mocks["playwright_manager_mock"].timezone_id = "Not/A/Real/Zone"
+    with caplog.at_level(logging.WARNING):
+        result = scraper._resolved_browser_timezone()
+    assert result == ZoneInfo("UTC")
+    assert any("Not/A/Real/Zone" in rec.message for rec in caplog.records)

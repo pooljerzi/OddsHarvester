@@ -519,6 +519,20 @@ class BaseScraper:
             self.logger.error(f"Error scraping match data from {match_link}: {e}")
             return None
 
+    def _resolved_browser_timezone(self) -> ZoneInfo:
+        """
+        Resolve the timezone the Playwright browser context is rendering in.
+
+        Falls back to UTC when no timezone is configured or when an unknown
+        timezone identifier is set. Emits a warning on fallback.
+        """
+        tz_id = getattr(self.playwright_manager, "timezone_id", None) or "UTC"
+        try:
+            return ZoneInfo(tz_id)
+        except ZoneInfoNotFoundError:
+            self.logger.warning(f"Unknown timezone '{tz_id}', falling back to UTC for DOM date parsing")
+            return ZoneInfo("UTC")
+
     async def _extract_match_details_event_header(self, page: Page, match_link: str) -> dict[str, Any] | None:
         """
         Extract match details such as date, teams, and scores from the react event header.
