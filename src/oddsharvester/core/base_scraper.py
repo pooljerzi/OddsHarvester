@@ -533,6 +533,32 @@ class BaseScraper:
             self.logger.warning(f"Unknown timezone '{tz_id}', falling back to UTC for DOM date parsing")
             return ZoneInfo("UTC")
 
+    def _parse_match_date_from_dom(self, soup: BeautifulSoup) -> str | None:
+        """
+        Extract the match date from <div data-testid="game-time-item"> and
+        return it formatted as "YYYY-MM-DD HH:MM:SS UTC".
+
+        Returns None if the div or its child paragraphs are missing, or if
+        the text doesn't match the expected "DD MMM YYYY" + "HH:MM" shape.
+        """
+        try:
+            game_time_div = soup.find("div", attrs={"data-testid": OddsPortalSelectors.MATCH_DETAILS_GAME_TIME_TESTID})
+            if not game_time_div:
+                return None
+
+            paragraphs = game_time_div.find_all("p")
+            if len(paragraphs) < 3:
+                return None
+
+            date_part = paragraphs[1].get_text(strip=True).rstrip(",")
+            time_part = paragraphs[2].get_text(strip=True)
+            local_dt = datetime.strptime(f"{date_part} {time_part}", "%d %b %Y %H:%M")
+            local_dt = local_dt.replace(tzinfo=self._resolved_browser_timezone())
+            return local_dt.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
+        except Exception as e:
+            self.logger.warning(f"DOM parse failed for match_date: {e}")
+            return None
+
     async def _extract_match_details_event_header(self, page: Page, match_link: str) -> dict[str, Any] | None:
         """
         Extract match details such as date, teams, and scores from the react event header.

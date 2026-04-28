@@ -3,6 +3,7 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 from zoneinfo import ZoneInfo
 
+from bs4 import BeautifulSoup
 from playwright.async_api import Page, TimeoutError
 import pytest
 
@@ -732,3 +733,48 @@ def test_resolved_browser_timezone_falls_back_on_unknown(setup_base_scraper_mock
         result = scraper._resolved_browser_timezone()
     assert result == ZoneInfo("UTC")
     assert any("Not/A/Real/Zone" in rec.message for rec in caplog.records)
+
+
+def _make_date_html(date_str: str = "06 Aug 2022,", time_str: str = "11:30") -> str:
+    return f"""
+    <html><body>
+      <div data-testid="game-time-item">
+        <p>Saturday</p>
+        <p>{date_str}</p>
+        <p>{time_str}</p>
+      </div>
+    </body></html>
+    """
+
+
+def test_parse_match_date_from_dom_parses_utc_nominal(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    setup_base_scraper_mocks["playwright_manager_mock"].timezone_id = "UTC"
+    soup = BeautifulSoup(_make_date_html(), "html.parser")
+    assert scraper._parse_match_date_from_dom(soup) == "2022-08-06 11:30:00 UTC"
+
+
+def test_parse_match_date_from_dom_converts_local_tz_to_utc(setup_base_scraper_mocks):
+    # Brussels is UTC+2 in August (DST), so 13:30 Brussels = 11:30 UTC
+    scraper = setup_base_scraper_mocks["scraper"]
+    setup_base_scraper_mocks["playwright_manager_mock"].timezone_id = "Europe/Brussels"
+    soup = BeautifulSoup(_make_date_html(time_str="13:30"), "html.parser")
+    assert scraper._parse_match_date_from_dom(soup) == "2022-08-06 11:30:00 UTC"
+
+
+def test_parse_match_date_from_dom_returns_none_when_div_missing(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup("<html><body></body></html>", "html.parser")
+    assert scraper._parse_match_date_from_dom(soup) is None
+
+
+def test_parse_match_date_from_dom_returns_none_on_unparseable_text(setup_base_scraper_mocks, caplog):
+    import logging
+
+    scraper = setup_base_scraper_mocks["scraper"]
+    setup_base_scraper_mocks["playwright_manager_mock"].timezone_id = "UTC"
+    soup = BeautifulSoup(_make_date_html(date_str="not a date,", time_str="??:??"), "html.parser")
+    with caplog.at_level(logging.WARNING):
+        result = scraper._parse_match_date_from_dom(soup)
+    assert result is None
+    assert any("DOM parse failed for match_date" in rec.message for rec in caplog.records)
