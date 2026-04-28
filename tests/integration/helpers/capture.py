@@ -67,23 +67,45 @@ def build_fixture_filename(
     return f"{markets_str}_{period}_{bookies_filter}.json"
 
 
-def _strip_har_fragments(har_path: Path) -> None:
-    """Strip URL fragments from request URLs and 30x Location headers.
+def _alias_fragmented_redirect_targets(har_path: Path) -> None:
+    """Add aliased entries for fragmented redirect targets so HAR replay can resolve them.
 
-    Playwright's `route_from_har` with `not_found="abort"` fails to follow a redirect
-    when the Location header contains a fragment (e.g. `https://.../page#anchor`),
-    because the fragmented URL doesn't match any HAR entry on the next hop. HTTP
-    fragments are client-only and never reach the server, so dropping them is safe.
+    OddsPortal H2H pages use URL fragments (`#match_id`) to select which match in the
+    H2H series to display. Match URLs 301-redirect to `/h2h/<teams>/#match_id`. Playwright's
+    `route_from_har` with `not_found="abort"` looks up the fragmented redirect target
+    against HAR entries verbatim; since HAR records the bare URL (HTTP fragments never
+    reach the wire), the fragmented lookup fails and the navigation aborts. We can't
+    simply strip the fragment from the Location header — JS reads `location.hash` to
+    pick the right match, so dropping it shows the wrong match.
+
+    The fix: for each Location header with a fragment, duplicate the bare-URL entry as
+    an alias at the fragmented URL. The redirect chain now resolves, and the browser's
+    `location.hash` is preserved (Playwright sets it from the redirect target), so JS
+    renders the intended match.
     """
     har = json.loads(har_path.read_text())
-    for entry in har.get("log", {}).get("entries", []):
-        request_url = entry.get("request", {}).get("url", "")
-        if "#" in request_url:
-            entry["request"]["url"] = request_url.split("#", 1)[0]
+    entries = har.get("log", {}).get("entries", [])
+    url_to_entry = {entry["request"]["url"]: entry for entry in entries if "request" in entry}
+
+    fragmented_targets: set[str] = set()
+    for entry in entries:
         for header in entry.get("response", {}).get("headers", []):
-            if header.get("name", "").lower() == "location" and "#" in header.get("value", ""):
-                header["value"] = header["value"].split("#", 1)[0]
-    har_path.write_text(json.dumps(har))
+            if header.get("name", "").lower() == "location":
+                value = header.get("value", "")
+                if "#" in value:
+                    fragmented_targets.add(value)
+
+    new_entries = []
+    for fragmented_url in fragmented_targets:
+        bare_url = fragmented_url.split("#", 1)[0]
+        if bare_url in url_to_entry and fragmented_url not in url_to_entry:
+            alias = json.loads(json.dumps(url_to_entry[bare_url]))
+            alias["request"]["url"] = fragmented_url
+            new_entries.append(alias)
+
+    if new_entries:
+        entries.extend(new_entries)
+        har_path.write_text(json.dumps(har))
 
 
 def capture_fixture(
@@ -180,7 +202,7 @@ def capture_fixture(
         raise RuntimeError(f"HAR file not created: {har_path}")
 
     if capture_har:
-        _strip_har_fragments(har_path)
+        _alias_fragmented_redirect_targets(har_path)
 
     # Load scraped data to extract metadata
     with open(output_path) as f:

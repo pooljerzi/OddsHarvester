@@ -28,6 +28,7 @@ repos:
       - id: check-added-large-files
         name: check for added large files
         args: ["--maxkb=1000"]
+        exclude: '\.har$'
       - id: debug-statements
         name: debug statements (Python)
 

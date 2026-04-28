@@ -175,6 +175,7 @@ class TestFootballBasicMarkets:
         result = compare_match_data(actual[0], expected[0])
         assert result.passed, str(result)
 
+    @pytest.mark.live_only
     def test_fb_007_real_madrid_barcelona(
         self,
         run_scraper,

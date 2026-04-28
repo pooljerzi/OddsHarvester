@@ -23,6 +23,7 @@ LAKERS_WARRIORS = {
 
 
 @pytest.mark.integration
+@pytest.mark.live_only
 class TestBasketballBasicMarkets:
     """Tests for basic basketball markets."""
 
@@ -167,6 +168,7 @@ class TestBasketballBasicMarkets:
 
 
 @pytest.mark.integration
+@pytest.mark.live_only
 class TestBasketballPeriods:
     """Tests for basketball period options."""
 

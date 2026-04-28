@@ -33,6 +33,7 @@ HUMBERT_ZVEREV = {
 class TestTennisBasicMarkets:
     """Tests for basic tennis markets."""
 
+    @pytest.mark.live_only
     def test_tn_001_match_winner(
         self,
         run_scraper,
@@ -79,6 +80,7 @@ class TestTennisBasicMarkets:
         result = compare_match_data(actual[0], expected[0])
         assert result.passed, str(result)
 
+    @pytest.mark.live_only
     def test_tn_002_multiple_markets(
         self,
         run_scraper,
@@ -268,6 +270,7 @@ class TestTennisBasicMarkets:
 class TestTennisPeriods:
     """Tests for tennis period options."""
 
+    @pytest.mark.live_only
     def test_tn_006_1st_set(
         self,
         run_scraper,
