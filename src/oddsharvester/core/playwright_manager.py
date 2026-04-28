@@ -1,10 +1,15 @@
 import logging
+import os
+from pathlib import Path
 import random
 
 from playwright.async_api import async_playwright
 
 from oddsharvester.utils.constants import PLAYWRIGHT_BROWSER_ARGS, PLAYWRIGHT_BROWSER_ARGS_DOCKER
 from oddsharvester.utils.utils import is_running_in_docker
+
+HAR_REPLAY_ENV_VAR = "ODDSHARVESTER_HAR_REPLAY"
+HAR_REPLAY_URL_PATTERN = "**/oddsportal.com/**"
 
 # Anti-detection script to hide automation signatures
 STEALTH_SCRIPT = """
@@ -70,6 +75,15 @@ class PlaywrightManager:
 
             # Add anti-detection script
             await self.context.add_init_script(STEALTH_SCRIPT)
+
+            har_replay_path = os.environ.get(HAR_REPLAY_ENV_VAR)
+            if har_replay_path:
+                self.logger.info(f"HAR replay mode active: {har_replay_path}")
+                await self.context.route_from_har(
+                    Path(har_replay_path),
+                    url=HAR_REPLAY_URL_PATTERN,
+                    not_found="abort",
+                )
 
             self.page = await self.context.new_page()
             self.logger.info("Playwright initialized successfully.")
