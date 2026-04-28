@@ -851,3 +851,57 @@ def test_parse_league_from_dom_returns_none_when_breadcrumb_missing(setup_base_s
     scraper = setup_base_scraper_mocks["scraper"]
     soup = BeautifulSoup("<html><body></body></html>", "html.parser")
     assert scraper._parse_league_from_dom(soup) is None
+
+
+def _make_results_html(score_text: str = "Final result 2:1 (1:0, 1:1)") -> str:
+    return f"""
+    <html><body>
+      <section>
+        <div data-testid="game-time-item"><p>x</p><p>06 Aug 2022,</p><p>11:30</p></div>
+        <div><span>logos</span></div>
+        <div>
+          <div class="flex flex-wrap">{score_text}</div>
+        </div>
+      </section>
+    </body></html>
+    """
+
+
+def test_parse_results_from_dom_extracts_score_and_partial(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_results_html(), "html.parser")
+    home, away, partial = scraper._parse_results_from_dom(soup)
+    assert home == "2"
+    assert away == "1"
+    assert partial == "(1:0, 1:1)"
+
+
+def test_parse_results_from_dom_extracts_score_without_partial(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_results_html(score_text="Final result 4:0"), "html.parser")
+    home, away, partial = scraper._parse_results_from_dom(soup)
+    assert home == "4"
+    assert away == "0"
+    assert partial is None
+
+
+def test_parse_results_from_dom_returns_none_when_pattern_absent(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup('<html><body><div data-testid="game-time-item"></div></body></html>', "html.parser")
+    assert scraper._parse_results_from_dom(soup) == (None, None, None)
+
+
+def test_parse_results_from_dom_returns_none_when_game_time_div_missing(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup("<html><body><div>Final result 2:1 (1:0, 1:1)</div></body></html>", "html.parser")
+    assert scraper._parse_results_from_dom(soup) == (None, None, None)
+
+
+def test_parse_results_from_dom_normalizes_nbsp_in_partial(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    # OddsPortal renders non-breaking spaces (\xa0) between partial-result tokens.
+    soup = BeautifulSoup(_make_results_html("Final result 2:1 (1:0,\xa01:1)"), "html.parser")
+    home, away, partial = scraper._parse_results_from_dom(soup)
+    assert home == "2"
+    assert away == "1"
+    assert partial == "(1:0, 1:1)"

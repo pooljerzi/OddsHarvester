@@ -601,6 +601,38 @@ class BaseScraper:
             self.logger.warning(f"DOM parse failed for league_name: {e}")
             return None
 
+    _RESULT_TEXT_RE = re.compile(r"(\d+)\s*:\s*(\d+)(?:\s*\(([\d:,\s ]+)\))?")
+
+    def _parse_results_from_dom(self, soup: BeautifulSoup) -> tuple[str | None, str | None, str | None]:
+        """
+        Extract (home_score, away_score, partial_results) from the page DOM.
+
+        Scoped to descendants of <div data-testid="game-time-item">'s parent
+        to avoid false positives elsewhere in the page. Returns (None, None,
+        None) if the score pattern isn't found.
+        """
+        try:
+            game_time_div = soup.find("div", attrs={"data-testid": OddsPortalSelectors.MATCH_DETAILS_GAME_TIME_TESTID})
+            if not game_time_div:
+                return None, None, None
+            scope = game_time_div.find_parent() or soup
+            excluded = {id(game_time_div), *(id(d) for d in game_time_div.find_all("div"))}
+            for div in scope.find_all("div"):
+                if id(div) in excluded:
+                    continue
+                text = div.get_text(separator=" ", strip=True)
+                m = self._RESULT_TEXT_RE.search(text)
+                if m:
+                    home, away, partial = m.group(1), m.group(2), m.group(3)
+                    formatted_partial = (
+                        f"({re.sub(r' +', ' ', partial.replace(chr(0xA0), ' ')).strip()})" if partial else None
+                    )
+                    return home, away, formatted_partial
+            return None, None, None
+        except Exception as e:
+            self.logger.warning(f"DOM parse failed for results: {e}")
+            return None, None, None
+
     async def _extract_match_details_event_header(self, page: Page, match_link: str) -> dict[str, Any] | None:
         """
         Extract match details such as date, teams, and scores from the react event header.
