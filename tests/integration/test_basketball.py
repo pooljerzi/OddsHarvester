@@ -53,7 +53,9 @@ class TestBasketballBasicMarkets:
             markets=["home_away"],
             output_path=output_path,
             period="full_including_ot",
-            har_path=har_for_match(LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"]),
+            har_path=har_for_match(
+                LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -97,7 +99,9 @@ class TestBasketballBasicMarkets:
             match_link=LAKERS_CELTICS["url"],
             markets=["home_away", "1x2"],
             output_path=output_path,
-            har_path=har_for_match(LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"]),
+            har_path=har_for_match(
+                LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -141,7 +145,9 @@ class TestBasketballBasicMarkets:
             match_link=LAKERS_WARRIORS["url"],
             markets=["home_away"],
             output_path=output_path,
-            har_path=har_for_match(LAKERS_WARRIORS["sport"], LAKERS_WARRIORS["league"], LAKERS_WARRIORS["match_id"]),
+            har_path=har_for_match(
+                LAKERS_WARRIORS["sport"], LAKERS_WARRIORS["league"], LAKERS_WARRIORS["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -191,7 +197,9 @@ class TestBasketballPeriods:
             markets=["home_away"],
             output_path=output_path,
             period="1st_half",
-            har_path=har_for_match(LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"]),
+            har_path=har_for_match(
+                LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -236,7 +244,9 @@ class TestBasketballPeriods:
             markets=["home_away"],
             output_path=output_path,
             period="1st_quarter",
-            har_path=har_for_match(LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"]),
+            har_path=har_for_match(
+                LAKERS_CELTICS["sport"], LAKERS_CELTICS["league"], LAKERS_CELTICS["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -281,7 +291,9 @@ class TestBasketballPeriods:
             markets=["home_away"],
             output_path=output_path,
             period="1st_half",
-            har_path=har_for_match(LAKERS_WARRIORS["sport"], LAKERS_WARRIORS["league"], LAKERS_WARRIORS["match_id"]),
+            har_path=har_for_match(
+                LAKERS_WARRIORS["sport"], LAKERS_WARRIORS["league"], LAKERS_WARRIORS["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"

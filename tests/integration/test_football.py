@@ -55,7 +55,10 @@ class TestFootballBasicMarkets:
             period="full_time",
             bookies_filter="all",
             har_path=har_for_match(
-                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+                LEICESTER_BRENTFORD["sport"],
+                LEICESTER_BRENTFORD["league"],
+                LEICESTER_BRENTFORD["match_id"],
+                fixture_name,
             ),
         )
 
@@ -101,7 +104,10 @@ class TestFootballBasicMarkets:
             markets=["1x2", "btts", "double_chance"],
             output_path=output_path,
             har_path=har_for_match(
-                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+                LEICESTER_BRENTFORD["sport"],
+                LEICESTER_BRENTFORD["league"],
+                LEICESTER_BRENTFORD["match_id"],
+                fixture_name,
             ),
         )
 
@@ -147,7 +153,10 @@ class TestFootballBasicMarkets:
             markets=["over_under_2_5", "over_under_1_5"],
             output_path=output_path,
             har_path=har_for_match(
-                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+                LEICESTER_BRENTFORD["sport"],
+                LEICESTER_BRENTFORD["league"],
+                LEICESTER_BRENTFORD["match_id"],
+                fixture_name,
             ),
         )
 
@@ -193,7 +202,10 @@ class TestFootballBasicMarkets:
             markets=["1x2", "btts"],
             output_path=output_path,
             har_path=har_for_match(
-                REAL_MADRID_BARCELONA["sport"], REAL_MADRID_BARCELONA["league"], REAL_MADRID_BARCELONA["match_id"]
+                REAL_MADRID_BARCELONA["sport"],
+                REAL_MADRID_BARCELONA["league"],
+                REAL_MADRID_BARCELONA["match_id"],
+                fixture_name,
             ),
         )
 
@@ -245,7 +257,10 @@ class TestFootballPeriods:
             output_path=output_path,
             period="1st_half",
             har_path=har_for_match(
-                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+                LEICESTER_BRENTFORD["sport"],
+                LEICESTER_BRENTFORD["league"],
+                LEICESTER_BRENTFORD["match_id"],
+                fixture_name,
             ),
         )
 
@@ -297,7 +312,10 @@ class TestFootballBookiesFilter:
             output_path=output_path,
             bookies_filter="classic",
             har_path=har_for_match(
-                LEICESTER_BRENTFORD["sport"], LEICESTER_BRENTFORD["league"], LEICESTER_BRENTFORD["match_id"]
+                LEICESTER_BRENTFORD["sport"],
+                LEICESTER_BRENTFORD["league"],
+                LEICESTER_BRENTFORD["match_id"],
+                fixture_name,
             ),
         )
 

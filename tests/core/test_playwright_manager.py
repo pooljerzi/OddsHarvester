@@ -35,7 +35,7 @@ async def test_route_from_har_called_when_env_var_set(mock_playwright, monkeypat
 
     mock_playwright["context"].route_from_har.assert_awaited_once_with(
         har_path,
-        url="**/oddsportal.com/**",
+        url="**oddsportal.com/**",
         not_found="abort",
     )
 
@@ -62,7 +62,7 @@ async def test_record_har_kwargs_when_record_env_var_set(mock_playwright, monkey
     call_kwargs = mock_playwright["browser"].new_context.await_args.kwargs
     assert call_kwargs["record_har_path"] == har_path
     assert call_kwargs["record_har_mode"] == "full"
-    assert call_kwargs["record_har_url_filter"] == "**/oddsportal.com/**"
+    assert call_kwargs["record_har_url_filter"] == "**oddsportal.com/**"
 
 
 @pytest.mark.asyncio

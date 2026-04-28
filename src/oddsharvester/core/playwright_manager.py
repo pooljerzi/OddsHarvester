@@ -10,7 +10,7 @@ from oddsharvester.utils.utils import is_running_in_docker
 
 HAR_REPLAY_ENV_VAR = "ODDSHARVESTER_HAR_REPLAY"
 HAR_RECORD_ENV_VAR = "ODDSHARVESTER_HAR_RECORD"
-HAR_REPLAY_URL_PATTERN = "**/oddsportal.com/**"
+HAR_REPLAY_URL_PATTERN = "**oddsportal.com/**"
 
 # Anti-detection script to hide automation signatures
 STEALTH_SCRIPT = """

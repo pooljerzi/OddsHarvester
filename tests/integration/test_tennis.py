@@ -59,7 +59,9 @@ class TestTennisBasicMarkets:
             match_link=DJOKOVIC_SINNER["url"],
             markets=["match_winner"],
             output_path=output_path,
-            har_path=har_for_match(DJOKOVIC_SINNER["sport"], DJOKOVIC_SINNER["league"], DJOKOVIC_SINNER["match_id"]),
+            har_path=har_for_match(
+                DJOKOVIC_SINNER["sport"], DJOKOVIC_SINNER["league"], DJOKOVIC_SINNER["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -103,7 +105,9 @@ class TestTennisBasicMarkets:
             match_link=DJOKOVIC_SINNER["url"],
             markets=["match_winner", "over_under_sets_2_5"],
             output_path=output_path,
-            har_path=har_for_match(DJOKOVIC_SINNER["sport"], DJOKOVIC_SINNER["league"], DJOKOVIC_SINNER["match_id"]),
+            har_path=har_for_match(
+                DJOKOVIC_SINNER["sport"], DJOKOVIC_SINNER["league"], DJOKOVIC_SINNER["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -147,7 +151,9 @@ class TestTennisBasicMarkets:
             match_link=DJOKOVIC_LEHECKA["url"],
             markets=["match_winner"],
             output_path=output_path,
-            har_path=har_for_match(DJOKOVIC_LEHECKA["sport"], DJOKOVIC_LEHECKA["league"], DJOKOVIC_LEHECKA["match_id"]),
+            har_path=har_for_match(
+                DJOKOVIC_LEHECKA["sport"], DJOKOVIC_LEHECKA["league"], DJOKOVIC_LEHECKA["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -191,7 +197,9 @@ class TestTennisBasicMarkets:
             match_link=DJOKOVIC_LEHECKA["url"],
             markets=["over_under_games_22_5"],
             output_path=output_path,
-            har_path=har_for_match(DJOKOVIC_LEHECKA["sport"], DJOKOVIC_LEHECKA["league"], DJOKOVIC_LEHECKA["match_id"]),
+            har_path=har_for_match(
+                DJOKOVIC_LEHECKA["sport"], DJOKOVIC_LEHECKA["league"], DJOKOVIC_LEHECKA["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -235,7 +243,9 @@ class TestTennisBasicMarkets:
             match_link=HUMBERT_ZVEREV["url"],
             markets=["match_winner"],
             output_path=output_path,
-            har_path=har_for_match(HUMBERT_ZVEREV["sport"], HUMBERT_ZVEREV["league"], HUMBERT_ZVEREV["match_id"]),
+            har_path=har_for_match(
+                HUMBERT_ZVEREV["sport"], HUMBERT_ZVEREV["league"], HUMBERT_ZVEREV["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"
@@ -285,7 +295,9 @@ class TestTennisPeriods:
             markets=["match_winner"],
             output_path=output_path,
             period="1st_set",
-            har_path=har_for_match(DJOKOVIC_SINNER["sport"], DJOKOVIC_SINNER["league"], DJOKOVIC_SINNER["match_id"]),
+            har_path=har_for_match(
+                DJOKOVIC_SINNER["sport"], DJOKOVIC_SINNER["league"], DJOKOVIC_SINNER["match_id"], fixture_name
+            ),
         )
 
         assert exit_code == 0, f"Scraper failed: {stderr}"

@@ -143,17 +143,19 @@ def fixture_exists():
 @pytest.fixture
 def har_for_match(request):
     """
-    Returns the path to snapshot.har for a match if it exists, else None.
+    Returns the path to the HAR file paired with a JSON fixture, if it exists.
 
-    When None, the test's run_scraper call falls through to live mode.
-    When --live is passed on the command line, this fixture always returns None.
+    Each JSON fixture has a sibling .har with the same stem (e.g. 1x2_full_time_all.har
+    next to 1x2_full_time_all.json). Returns None when no HAR exists or when --live is set,
+    in which case run_scraper falls through to live mode.
     """
     live_mode = request.config.getoption("--live")
 
-    def _har(sport: str, league: str, match_id: str) -> Path | None:
+    def _har(sport: str, league: str, match_id: str, fixture_name: str) -> Path | None:
         if live_mode:
             return None
-        har_path = FIXTURES_DIR / sport / league / match_id / "snapshot.har"
+        json_path = FIXTURES_DIR / sport / league / match_id / fixture_name
+        har_path = json_path.with_suffix(".har")
         return har_path if har_path.exists() else None
 
     return _har

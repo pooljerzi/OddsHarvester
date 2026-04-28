@@ -127,7 +127,7 @@ def capture_fixture(
     if headless:
         cmd.append("--headless")
 
-    har_path = output_dir / "snapshot.har"
+    har_path = output_path.with_suffix(".har")
 
     # Run scraper
     print(f"Running scraper for {match_url}...")
