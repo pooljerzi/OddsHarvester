@@ -559,6 +559,24 @@ class BaseScraper:
             self.logger.warning(f"DOM parse failed for match_date: {e}")
             return None
 
+    def _parse_teams_from_dom(self, soup: BeautifulSoup) -> tuple[str | None, str | None]:
+        """
+        Extract (home_team, away_team) from <div data-testid="game-host">
+        and <div data-testid="game-guest">. Returns (None, None) if either
+        side is missing - caller falls back to JSON for both fields.
+        """
+        try:
+            host = soup.find("div", attrs={"data-testid": OddsPortalSelectors.MATCH_DETAILS_GAME_HOST_TESTID})
+            guest = soup.find("div", attrs={"data-testid": OddsPortalSelectors.MATCH_DETAILS_GAME_GUEST_TESTID})
+            host_p = host.find("p") if host else None
+            guest_p = guest.find("p") if guest else None
+            if not host_p or not guest_p:
+                return None, None
+            return host_p.get_text(strip=True), guest_p.get_text(strip=True)
+        except Exception as e:
+            self.logger.warning(f"DOM parse failed for teams: {e}")
+            return None, None
+
     async def _extract_match_details_event_header(self, page: Page, match_link: str) -> dict[str, Any] | None:
         """
         Extract match details such as date, teams, and scores from the react event header.

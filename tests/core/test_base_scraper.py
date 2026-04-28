@@ -778,3 +778,33 @@ def test_parse_match_date_from_dom_returns_none_on_unparseable_text(setup_base_s
         result = scraper._parse_match_date_from_dom(soup)
     assert result is None
     assert any("DOM parse failed for match_date" in rec.message for rec in caplog.records)
+
+
+def _make_teams_html(home: str | None = "Fulham", away: str | None = "Liverpool") -> str:
+    home_block = f'<div data-testid="game-host"><p>{home}</p></div>' if home is not None else ""
+    away_block = f'<div data-testid="game-guest"><p>{away}</p></div>' if away is not None else ""
+    return f"<html><body>{home_block}{away_block}</body></html>"
+
+
+def test_parse_teams_from_dom_returns_both_when_present(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_teams_html(), "html.parser")
+    assert scraper._parse_teams_from_dom(soup) == ("Fulham", "Liverpool")
+
+
+def test_parse_teams_from_dom_returns_none_pair_when_home_missing(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_teams_html(home=None), "html.parser")
+    assert scraper._parse_teams_from_dom(soup) == (None, None)
+
+
+def test_parse_teams_from_dom_returns_none_pair_when_away_missing(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup(_make_teams_html(away=None), "html.parser")
+    assert scraper._parse_teams_from_dom(soup) == (None, None)
+
+
+def test_parse_teams_from_dom_returns_none_pair_when_both_missing(setup_base_scraper_mocks):
+    scraper = setup_base_scraper_mocks["scraper"]
+    soup = BeautifulSoup("<html><body></body></html>", "html.parser")
+    assert scraper._parse_teams_from_dom(soup) == (None, None)
